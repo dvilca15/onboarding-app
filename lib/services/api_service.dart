@@ -34,7 +34,9 @@ class ApiService {
   // ── Auth ───────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> login(
-      String email, String password) async {
+    String email,
+    String password,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/login'),
       headers: {'Content-Type': 'application/json'},
@@ -251,6 +253,105 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  // ── Usuarios — editar / eliminar ──────────────────────────
+
+  static Future<Map<String, dynamic>> editarUsuario({
+    required int idUser,
+    String? nombre,
+    String? email,
+    String? password,
+  }) async {
+    final headers = await getHeaders();
+    final body = <String, dynamic>{};
+    if (nombre != null) body['nombre'] = nombre;
+    if (email != null) body['email'] = email;
+    if (password != null) body['password'] = password;
+    final response = await http.put(
+      Uri.parse('$baseUrl/users/$idUser'),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+    return _handleResponse(response);
+  }
+
+  static Future<void> eliminarUsuario(int idUser) async {
+    final headers = await getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/users/$idUser'),
+      headers: headers,
+    );
+    if (response.statusCode != 204) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      throw Exception(body['detail'] ?? 'Error al eliminar');
+    }
+  }
+
+  // ── Planes — editar / eliminar ─────────────────────────────
+
+  static Future<Map<String, dynamic>> editarPlan({
+    required int idPlan,
+    String? nombre,
+    String? descripcion,
+    bool? esPlantilla,
+  }) async {
+    final headers = await getHeaders();
+    final body = <String, dynamic>{};
+    if (nombre != null) body['nombre'] = nombre;
+    if (descripcion != null) body['descripcion'] = descripcion;
+    if (esPlantilla != null) body['es_plantilla'] = esPlantilla;
+    final response = await http.put(
+      Uri.parse('$baseUrl/planes/$idPlan'),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+    return _handleResponse(response);
+  }
+
+  static Future<void> eliminarPlan(int idPlan) async {
+    final headers = await getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/planes/$idPlan'),
+      headers: headers,
+    );
+    if (response.statusCode != 204) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      throw Exception(body['detail'] ?? 'Error al eliminar');
+    }
+  }
+
+  // ── Steps — eliminar ───────────────────────────────────────
+
+  static Future<void> eliminarStep({
+    required int idPlan,
+    required int idStep,
+  }) async {
+    final headers = await getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/planes/$idPlan/steps/$idStep'),
+      headers: headers,
+    );
+    if (response.statusCode != 204) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      throw Exception(body['detail'] ?? 'Error al eliminar');
+    }
+  }
+
+  // ── Tasks — eliminar ───────────────────────────────────────
+
+  static Future<void> eliminarTask({
+    required int idStep,
+    required int idTask,
+  }) async {
+    final headers = await getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/steps/$idStep/tasks/$idTask'),
+      headers: headers,
+    );
+    if (response.statusCode != 204) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      throw Exception(body['detail'] ?? 'Error al eliminar');
+    }
+  }
   // ── Handler ────────────────────────────────────────────────
 
   static dynamic _handleResponse(http.Response response) {
