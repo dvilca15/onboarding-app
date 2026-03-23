@@ -352,6 +352,33 @@ class ApiService {
       throw Exception(body['detail'] ?? 'Error al eliminar');
     }
   }
+
+  // ── Empleados por Plan ─────────────────────────────────────
+
+  static Future<List<dynamic>> listarEmpleadosPlan(int idPlan) async {
+    final headers = await getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/planes/$idPlan/empleados'),
+      headers: headers,
+    );
+    final data = _handleResponse(response);
+    return data as List<dynamic>;
+  }
+
+  // ── Onboarding — eliminar ──────────────────────────────────
+
+  static Future<void> eliminarOnboarding(int idOnboarding) async {
+    final headers = await getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/onboarding/$idOnboarding'),
+      headers: headers,
+    );
+    if (response.statusCode != 204) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      throw Exception(body['detail'] ?? 'Error al eliminar');
+    }
+  }
+
   // ── Handler ────────────────────────────────────────────────
 
   static dynamic _handleResponse(http.Response response) {

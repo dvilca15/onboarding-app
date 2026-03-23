@@ -15,6 +15,7 @@ import 'widgets/ui_helpers.dart';
 import 'modals/nuevo_empleado_modal.dart';
 import 'modals/nuevo_plan_modal.dart';
 import 'modals/asignar_plan_modal.dart';
+import 'modals/eliminar_plan_modal.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -287,14 +288,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     },
   );
 
-  void _confirmarEliminarPlan(Plan p) => _confirmarEliminar(
-    titulo: 'Eliminar plan',
-    mensaje: '¿Eliminar "${p.nombre}"?\n\nSe eliminarán etapas y tareas. No eliminable si tiene empleados asignados.',
-    onConfirm: () async {
-      try { await ApiService.eliminarPlan(p.idPlan); _loadData(); showSnack(context, 'Plan eliminado', success: true); }
-      catch (e) { showSnack(context, e.toString().replaceAll('Exception: ', '')); }
-    },
-  );
+  void _confirmarEliminarPlan(Plan plan) {
+    EliminarPlanModal.show(
+      context,
+      idPlan: plan.idPlan,
+      nombrePlan: plan.nombre,
+      onEliminado: _loadData,
+    );
+  }
 
   void _showEditarPlan(Plan plan) {
     final nombreCtrl = TextEditingController(text: plan.nombre);
