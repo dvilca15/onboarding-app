@@ -35,7 +35,11 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
     setState(() { _loading = true; _loadError = null; });
     try {
       final raw = await ApiService.listarOnboardings();
-      final lista = raw.map((e) => Onboarding.fromJson(e)).toList();
+      final idUsuario = context.read<AuthProvider>().userId;
+      final lista = raw
+          .map((e) => Onboarding.fromJson(e))
+          .where((o) => o.idUser == idUsuario)
+          .toList();
       setState(() { _onboardings = lista; _loading = false; });
       if (lista.isNotEmpty) await _cargarDetalle(lista.first.idEmployeeOnboarding);
     } catch (e) {
