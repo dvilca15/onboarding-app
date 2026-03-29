@@ -5,6 +5,7 @@ class Plan {
   final String? descripcion;
   final bool esPlantilla;
   final DateTime fechaCreacion;
+  final String? mensajeBienvenida;
 
   const Plan({
     required this.idPlan,
@@ -13,15 +14,17 @@ class Plan {
     this.descripcion,
     required this.esPlantilla,
     required this.fechaCreacion,
+    this.mensajeBienvenida,
   });
 
   factory Plan.fromJson(Map<String, dynamic> json) => Plan(
-        idPlan: json['id_plan'] as int,
-        idEmpresa: json['id_empresa'] as int,
-        nombre: json['nombre'] as String,
-        descripcion: json['descripcion'] as String?,
-        esPlantilla: json['es_plantilla'] as bool? ?? false,
-        fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
+        idPlan:             json['id_plan'] as int,
+        idEmpresa:          json['id_empresa'] as int,
+        nombre:             json['nombre'] as String,
+        descripcion:        json['descripcion'] as String?,
+        esPlantilla:        json['es_plantilla'] as bool? ?? false,
+        fechaCreacion:      DateTime.parse(json['fecha_creacion'] as String),
+        mensajeBienvenida:  json['mensaje_bienvenida'] as String?,
       );
 }
 
@@ -44,12 +47,12 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
-        idTask: json['id_task'] as int,
-        idStep: json['id_step'] as int,
-        titulo: json['titulo'] as String,
-        tipo: json['tipo'] as String,
+        idTask:     json['id_task'] as int,
+        idStep:     json['id_step'] as int,
+        titulo:     json['titulo'] as String,
+        tipo:       json['tipo'] as String,
         obligatorio: json['obligatorio'] as bool,
-        orden: json['orden'] as int,
+        orden:      json['orden'] as int,
       );
 }
 
@@ -74,11 +77,11 @@ class Step {
   });
 
   factory Step.fromJson(Map<String, dynamic> json) => Step(
-        idStep: json['id_step'] as int,
-        idPlan: json['id_plan'] as int,
-        titulo: json['titulo'] as String,
-        descripcion: json['descripcion'] as String?,
-        orden: json['orden'] as int,
+        idStep:       json['id_step'] as int,
+        idPlan:       json['id_plan'] as int,
+        titulo:       json['titulo'] as String,
+        descripcion:  json['descripcion'] as String?,
+        orden:        json['orden'] as int,
         duracionDias: json['duracion_dias'] as int?,
         tasks: (json['tasks'] as List<dynamic>? ?? [])
             .map((t) => Task.fromJson(t as Map<String, dynamic>))
@@ -97,16 +100,18 @@ class PlanDetalle extends Plan {
     super.descripcion,
     required super.esPlantilla,
     required super.fechaCreacion,
+    super.mensajeBienvenida,
     this.steps = const [],
   });
 
   factory PlanDetalle.fromJson(Map<String, dynamic> json) => PlanDetalle(
-        idPlan: json['id_plan'] as int,
-        idEmpresa: json['id_empresa'] as int,
-        nombre: json['nombre'] as String,
-        descripcion: json['descripcion'] as String?,
-        esPlantilla: json['es_plantilla'] as bool? ?? false,
-        fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
+        idPlan:            json['id_plan'] as int,
+        idEmpresa:         json['id_empresa'] as int,
+        nombre:            json['nombre'] as String,
+        descripcion:       json['descripcion'] as String?,
+        esPlantilla:       json['es_plantilla'] as bool? ?? false,
+        fechaCreacion:     DateTime.parse(json['fecha_creacion'] as String),
+        mensajeBienvenida: json['mensaje_bienvenida'] as String?,
         steps: (json['steps'] as List<dynamic>? ?? [])
             .map((s) => Step.fromJson(s as Map<String, dynamic>))
             .toList(),

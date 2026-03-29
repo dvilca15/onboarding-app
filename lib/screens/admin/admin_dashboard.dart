@@ -83,10 +83,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
         usuarios: _usuarios, planes: _planes, onAsignado: _loadData);
   }
 
-  void _showNuevoStep(int idPlan, String nombrePlan) {
+  void _showNuevoStep(int idPlan, String nombrePlan, int cantidadSteps) {
     final tituloCtrl = TextEditingController();
     final descCtrl   = TextEditingController();
-    final ordenCtrl  = TextEditingController(text: '1');
+    // El orden por defecto es el siguiente disponible
+    final ordenCtrl  = TextEditingController(text: '${cantidadSteps + 1}');
     final diasCtrl   = TextEditingController();
     final formKey    = GlobalKey<FormState>();
     bool loading     = false;
@@ -106,7 +107,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Row(children: [
               Expanded(child: modalField('Orden', ordenCtrl, Icons.format_list_numbered, (v) {
                 if (v!.isEmpty) return 'Requerido';
-                if (int.tryParse(v) == null) return 'Número';
+                final n = int.tryParse(v);
+                if (n == null) return 'Número';
+                if (n < 1) return 'Mínimo 1';
+                if (n <= cantidadSteps) return 'Ya existe orden $n — usa ${cantidadSteps + 1}';
                 return null;
               }, keyboardType: TextInputType.number)),
               const SizedBox(width: 12),
@@ -144,14 +148,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showNuevoTask(int idStep, {VoidCallback? onCreated}) {
-    final tituloCtrl = TextEditingController();
-    final ordenCtrl  = TextEditingController(text: '1');
-    String tipo      = 'CONFIRMACION';
-    bool obligatorio = true;
-    bool loading     = false;
-    final formKey    = GlobalKey<FormState>();
-    const tipos      = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO'];
+  void _showNuevoTask(int idStep, {int? idPlan, int cantidadTasks = 0, VoidCallback? onCreated}) {
+    final tituloCtrl     = TextEditingController();
+    final ordenCtrl = TextEditingController(text: '${cantidadTasks + 1}');
+    final bienvenidaCtrl = TextEditingController();
+    String tipo          = 'CONFIRMACION';
+    bool obligatorio     = true;
+    bool loading         = false;
+    final formKey        = GlobalKey<FormState>();
+    const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO', 'BIENVENIDA'];
 
     showDialog(
       context: context,
@@ -159,31 +164,68 @@ class _AdminDashboardState extends State<AdminDashboard> {
         builder: (ctx, set) => AlertDialog(
           title: const Text('Nueva tarea',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          content: SizedBox(width: 400, child: Form(key: formKey, child: Column(mainAxisSize: MainAxisSize.min, children: [
-            modalField('Título', tituloCtrl, Icons.task_outlined,
-                (v) => v!.isEmpty ? 'Requerido' : null),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: tipo,
-              decoration: inputDec('Tipo', Icons.category_outlined),
-              items: tipos.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-              onChanged: (v) => set(() => tipo = v!),
-            ),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(child: modalField('Orden', ordenCtrl, Icons.format_list_numbered, (v) {
-                if (v!.isEmpty) return 'Requerido';
-                if (int.tryParse(v) == null) return 'Número';
-                return null;
-              }, keyboardType: TextInputType.number)),
-              const SizedBox(width: 12),
-              Row(children: [
-                Switch(value: obligatorio, onChanged: (v) => set(() => obligatorio = v),
-                    activeColor: const Color(0xFF1565C0)),
-                const Text('Obligatoria', style: TextStyle(fontSize: 13)),
-              ]),
-            ]),
-          ]))),
+          content: SingleChildScrollView(
+            child: SizedBox(width: 400, child: Form(key: formKey, child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (tipo != 'BIENVENIDA') ...[
+                  modalField('Título', tituloCtrl, Icons.task_outlined,
+                      (v) => v!.isEmpty ? 'Requerido' : null),
+                  const SizedBox(height: 12),
+                ],
+                DropdownButtonFormField<String>(
+                  value: tipo,
+                  decoration: inputDec('Tipo', Icons.category_outlined),
+                  items: tipos.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                  onChanged: (v) => set(() => tipo = v!),
+                ),
+                if (tipo == 'BIENVENIDA') ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE9FE),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(children: const [
+                      Icon(Icons.info_outline, size: 14, color: Color(0xFF7C3AED)),
+                      SizedBox(width: 6),
+                      Expanded(child: Text(
+                        'El empleado verá este mensaje al entrar por primera vez y contará como progreso.',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF7C3AED)),
+                      )),
+                    ]),
+                  ),
+                  const SizedBox(height: 12),
+                  modalField(
+                    'Escribe el mensaje de bienvenida...',
+                    bienvenidaCtrl,
+                    Icons.waving_hand_outlined,
+                    (v) => v!.isEmpty ? 'Requerido' : null,
+                    maxLines: 4,
+                  ),
+                ] else ...[
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(child: modalField('Orden', ordenCtrl, Icons.format_list_numbered, (v) {
+                        if (v!.isEmpty) return 'Requerido';
+                        final n = int.tryParse(v);
+                        if (n == null) return 'Número';
+                        if (n < 1) return 'Mínimo 1';
+                        if (n <= cantidadTasks) return 'Ya existe orden $n — usa ${cantidadTasks + 1}';
+                        return null;
+                      }, keyboardType: TextInputType.number)),
+                    const SizedBox(width: 12),
+                    Row(children: [
+                      Switch(value: obligatorio, onChanged: (v) => set(() => obligatorio = v),
+                          activeColor: const Color(0xFF1565C0)),
+                      const Text('Obligatoria', style: TextStyle(fontSize: 13)),
+                    ]),
+                  ]),
+                ],
+              ],
+            ))),
+          ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancelar', style: TextStyle(color: Color(0xFF6B7280)))),
@@ -192,16 +234,41 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 if (!formKey.currentState!.validate()) return;
                 set(() => loading = true);
                 try {
-                  await ApiService.crearTask(idStep: idStep, titulo: tituloCtrl.text.trim(),
-                      tipo: tipo, obligatorio: obligatorio, orden: int.parse(ordenCtrl.text));
-                  if (mounted) { Navigator.pop(ctx); showSnack(context, 'Tarea creada', success: true); onCreated?.call(); }
+                  if (tipo == 'BIENVENIDA') {
+                    if (idPlan == null) throw Exception('No se encontró el plan');
+                    await ApiService.actualizarBienvenida(
+                      idPlan: idPlan,
+                      mensaje: bienvenidaCtrl.text.trim(),
+                    );
+                    if (mounted) {
+                      Navigator.pop(ctx);
+                      showSnack(context, 'Mensaje de bienvenida guardado', success: true);
+                      _loadData();
+                      onCreated?.call();
+                    }
+                  } else {
+                    await ApiService.crearTask(
+                      idStep: idStep,
+                      titulo: tituloCtrl.text.trim(),
+                      tipo: tipo,
+                      obligatorio: obligatorio,
+                      orden: int.parse(ordenCtrl.text),
+                    );
+                    if (mounted) {
+                      Navigator.pop(ctx);
+                      showSnack(context, 'Tarea creada', success: true);
+                      onCreated?.call();
+                    }
+                  }
                 } catch (e) {
                   set(() => loading = false);
                   showSnack(context, e.toString().replaceAll('Exception: ', ''));
                 }
               },
               style: primaryBtnStyle(),
-              child: loading ? btnSpinner() : const Text('Crear tarea'),
+              child: loading
+                  ? btnSpinner()
+                  : Text(tipo == 'BIENVENIDA' ? 'Guardar bienvenida' : 'Crear tarea'),
             ),
           ],
         ),
@@ -309,7 +376,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, set) => AlertDialog(
-          title: const Text('Editar plan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          title: const Text('Editar plan',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SizedBox(width: 400, child: Form(key: formKey, child: Column(mainAxisSize: MainAxisSize.min, children: [
             modalField('Nombre del plan', nombreCtrl, Icons.assignment_outlined,
                 (v) => v!.isEmpty ? 'Requerido' : null),
@@ -317,7 +385,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             modalField('Descripción (opcional)', descCtrl, Icons.notes_outlined, (_) => null, maxLines: 3),
             const SizedBox(height: 12),
             Row(children: [
-              Switch(value: esPlantilla, onChanged: (v) => set(() => esPlantilla = v), activeColor: const Color(0xFF1565C0)),
+              Switch(value: esPlantilla, onChanged: (v) => set(() => esPlantilla = v),
+                  activeColor: const Color(0xFF1565C0)),
               const SizedBox(width: 8),
               const Text('Marcar como plantilla', style: TextStyle(fontSize: 14)),
             ]),
@@ -355,56 +424,238 @@ class _AdminDashboardState extends State<AdminDashboard> {
       builder: (ctx) => FutureBuilder<Map<String, dynamic>>(
         future: ApiService.obtenerPlan(plan.idPlan),
         builder: (ctx, snap) {
-          if (!snap.hasData) return const AlertDialog(content: SizedBox(height: 100, child: Center(child: CircularProgressIndicator())));
+          if (!snap.hasData) return const AlertDialog(
+              content: SizedBox(height: 100, child: Center(child: CircularProgressIndicator())));
           final detalle = PlanDetalle.fromJson(snap.data!);
+          final stepsVisibles = detalle.steps
+              .where((s) => s.titulo != '__BIENVENIDA__')
+              .toList()
+            ..sort((a, b) => a.orden.compareTo(b.orden));
+          final mensajeActual = detalle.mensajeBienvenida;
+
           return AlertDialog(
-            title: Text(detalle.nombre, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            title: Text(detalle.nombre,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             content: SizedBox(width: 500, child: SingleChildScrollView(child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: detalle.steps.map((s) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE5E7EB))),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Container(width: 24, height: 24,
-                        decoration: BoxDecoration(color: const Color(0xFF7C3AED), borderRadius: BorderRadius.circular(6)),
-                        child: Center(child: Text('${s.orden}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)))),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(s.titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
-                    TextButton.icon(
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        await Future.delayed(const Duration(milliseconds: 100));
-                        if (mounted) _showNuevoTask(s.idStep, onCreated: () => _showPlanDetalle(plan));
-                      },
-                      icon: const Icon(Icons.add, size: 14),
-                      label: const Text('Tarea', style: TextStyle(fontSize: 12)),
-                      style: TextButton.styleFrom(foregroundColor: const Color(0xFF7C3AED)),
-                    ),
-                  ]),
-                  if (s.tasks.isNotEmpty) ...[
+              children: [
+
+                // ── Sección bienvenida ──────────────────────
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDE9FE),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCECBF6)),
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      const Icon(Icons.waving_hand_rounded, size: 16, color: Color(0xFF7C3AED)),
+                      const SizedBox(width: 6),
+                      const Expanded(child: Text('Mensaje de bienvenida',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                              color: Color(0xFF7C3AED)))),
+                      if (mensajeActual != null) ...[
+                        InkWell(
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await Future.delayed(const Duration(milliseconds: 100));
+                            if (!mounted) return;
+                            _showEditarBienvenida(
+                              idPlan: plan.idPlan,
+                              mensajeActual: mensajeActual,
+                              onGuardado: () => _showPlanDetalle(plan),
+                            );
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.edit_outlined, size: 16, color: Color(0xFF7C3AED)),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await Future.delayed(const Duration(milliseconds: 100));
+                            if (!mounted) return;
+                            _confirmarEliminar(
+                              titulo: 'Eliminar bienvenida',
+                              mensaje: '¿Eliminar el mensaje de bienvenida de este plan?',
+                              onConfirm: () async {
+                                await ApiService.actualizarBienvenida(
+                                    idPlan: plan.idPlan, mensaje: null);
+                                _loadData();
+                                showSnack(context, 'Bienvenida eliminada', success: true);
+                              },
+                            );
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.delete_outline, size: 16, color: Color(0xFFDC2626)),
+                          ),
+                        ),
+                      ],
+                    ]),
                     const SizedBox(height: 8),
-                    ...s.tasks.map((t) => Padding(
-                      padding: const EdgeInsets.only(left: 32, bottom: 4),
-                      child: Row(children: [
-                        const Icon(Icons.radio_button_unchecked, size: 14, color: Color(0xFF9CA3AF)),
-                        const SizedBox(width: 6),
-                        Expanded(child: Text(t.titulo, style: const TextStyle(fontSize: 13))),
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(4)),
-                            child: Text(t.tipo, style: const TextStyle(fontSize: 10, color: Color(0xFF0369A1)))),
+                    if (mensajeActual != null)
+                      Text(mensajeActual,
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF374151), height: 1.5))
+                    else
+                      TextButton.icon(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await Future.delayed(const Duration(milliseconds: 100));
+                          if (!mounted) return;
+                          _showEditarBienvenida(
+                            idPlan: plan.idPlan,
+                            mensajeActual: null,
+                            onGuardado: () => _showPlanDetalle(plan),
+                          );
+                        },
+                        icon: const Icon(Icons.add, size: 14, color: Color(0xFF7C3AED)),
+                        label: const Text('Agregar mensaje de bienvenida',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF7C3AED))),
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                      ),
+                  ]),
+                ),
+
+                // ── Steps ───────────────────────────────────
+                ...stepsVisibles.asMap().entries.map((entry) {
+                  final s = entry.value;
+                  final numero = entry.key + 1;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE5E7EB))),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Container(width: 24, height: 24,
+                            decoration: BoxDecoration(color: const Color(0xFF7C3AED),
+                                borderRadius: BorderRadius.circular(6)),
+                            child: Center(child: Text('$numero',
+                                style: const TextStyle(color: Colors.white, fontSize: 12,
+                                    fontWeight: FontWeight.bold)))),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(s.titulo,
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                        TextButton.icon(
+                          onPressed: () async {
+                            Navigator.pop(ctx);
+                            await Future.delayed(const Duration(milliseconds: 100));
+                            if (mounted) _showNuevoTask(s.idStep,
+                              idPlan: plan.idPlan,
+                              cantidadTasks: s.tasks.length,
+                              onCreated: () => _showPlanDetalle(plan));
+                          },
+                          icon: const Icon(Icons.add, size: 14),
+                          label: const Text('Tarea', style: TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(foregroundColor: const Color(0xFF7C3AED)),
+                        ),
                       ]),
-                    )),
-                  ] else Padding(padding: const EdgeInsets.only(left: 32, top: 4),
-                      child: Text('Sin tareas aún', style: TextStyle(fontSize: 12, color: Colors.grey[400]))),
-                ]),
-              )).toList(),
+                      if (s.tasks.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...s.tasks.map((t) => Padding(
+                          padding: const EdgeInsets.only(left: 32, bottom: 4),
+                          child: Row(children: [
+                            const Icon(Icons.radio_button_unchecked, size: 14, color: Color(0xFF9CA3AF)),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(t.titulo,
+                                style: const TextStyle(fontSize: 13))),
+                            Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(color: const Color(0xFFE0F2FE),
+                                    borderRadius: BorderRadius.circular(4)),
+                                child: Text(t.tipo,
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFF0369A1)))),
+                          ]),
+                        )),
+                      ] else Padding(
+                          padding: const EdgeInsets.only(left: 32, top: 4),
+                          child: Text('Sin tareas aún',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[400]))),
+                    ]),
+                  );
+                }),
+              ],
             ))),
-            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))
+            ],
           );
         },
+      ),
+    );
+  }
+
+  void _showEditarBienvenida({
+    required int idPlan,
+    required String? mensajeActual,
+    required VoidCallback onGuardado,
+  }) {
+    final ctrl    = TextEditingController(text: mensajeActual ?? '');
+    final formKey = GlobalKey<FormState>();
+    bool loading  = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, set) => AlertDialog(
+          title: Text(mensajeActual == null ? 'Agregar bienvenida' : 'Editar bienvenida',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          content: SizedBox(width: 400, child: Form(key: formKey, child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFEDE9FE), borderRadius: BorderRadius.circular(8)),
+                child: Row(children: const [
+                  Icon(Icons.info_outline, size: 14, color: Color(0xFF7C3AED)),
+                  SizedBox(width: 6),
+                  Expanded(child: Text(
+                    'El empleado verá este mensaje al entrar por primera vez y contará como progreso.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF7C3AED)),
+                  )),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              modalField('Escribe el mensaje de bienvenida...', ctrl,
+                  Icons.waving_hand_outlined,
+                  (v) => v!.isEmpty ? 'Requerido' : null,
+                  maxLines: 5),
+            ],
+          ))),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar', style: TextStyle(color: Color(0xFF6B7280)))),
+            ElevatedButton(
+              onPressed: loading ? null : () async {
+                if (!formKey.currentState!.validate()) return;
+                set(() => loading = true);
+                try {
+                  await ApiService.actualizarBienvenida(
+                      idPlan: idPlan, mensaje: ctrl.text.trim());
+                  if (mounted) {
+                    Navigator.pop(ctx);
+                    _loadData();
+                    showSnack(context, 'Bienvenida guardada', success: true);
+                    onGuardado();
+                  }
+                } catch (e) {
+                  set(() => loading = false);
+                  showSnack(context, e.toString().replaceAll('Exception: ', ''));
+                }
+              },
+              style: primaryBtnStyle(),
+              child: loading ? btnSpinner() : const Text('Guardar'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -503,7 +754,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E))),
         const Spacer(),
         IconButton(icon: const Icon(Icons.refresh_rounded, color: Color(0xFF6B7280)), onPressed: _loadData, tooltip: 'Actualizar'),
-        if (_selectedIndex == 2) ...[           // solo en Planes
+        if (_selectedIndex == 2) ...[
           const SizedBox(width: 8),
           OutlinedButton.icon(
             onPressed: () => context.push('/admin/chat'),
@@ -695,6 +946,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
               if (p.descripcion != null)
                 Text(p.descripcion!, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
             ])),
+            if (p.mensajeBienvenida != null)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: const Color(0xFFEDE9FE), borderRadius: BorderRadius.circular(6)),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.waving_hand_rounded, size: 12, color: Color(0xFF7C3AED)),
+                  SizedBox(width: 4),
+                  Text('Bienvenida', style: TextStyle(color: Color(0xFF7C3AED), fontSize: 11, fontWeight: FontWeight.w500)),
+                ]),
+              ),
             if (p.esPlantilla)
               Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(6)),
@@ -702,7 +964,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ]),
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
-            _planBtn('Agregar etapa', Icons.add,                const Color(0xFF7C3AED), () => _showNuevoStep(p.idPlan, p.nombre)),
+            // Agregar etapa: carga el detalle primero para saber cuántos steps hay
+            _planBtn('Agregar etapa', Icons.add, const Color(0xFF7C3AED), () async {
+              try {
+                final detalle = await ApiService.obtenerPlan(p.idPlan);
+                final pd = PlanDetalle.fromJson(detalle);
+                final stepsActuales = pd.steps.where((s) => s.titulo != '__BIENVENIDA__').length;
+                if (mounted) _showNuevoStep(p.idPlan, p.nombre, stepsActuales);
+              } catch (_) {
+                if (mounted) _showNuevoStep(p.idPlan, p.nombre, 0);
+              }
+            }),
             _planBtn('Ver detalle',   Icons.visibility_outlined, const Color(0xFF6B7280), () => _showPlanDetalle(p)),
             _planBtn('Editar',        Icons.edit_outlined,       const Color(0xFF1565C0), () => _showEditarPlan(p)),
             _planBtn('Eliminar',      Icons.delete_outline,      const Color(0xFFDC2626), () => _confirmarEliminarPlan(p)),

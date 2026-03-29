@@ -389,4 +389,61 @@ class ApiService {
     final detail = body['detail'] ?? 'Error desconocido';
     throw Exception(detail);
   }
+
+// ── Bienvenida ─────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> obtenerBienvenida({
+    required int idPlan,
+    required int idOnboarding,
+  }) async {
+    final headers = await getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/planes/$idPlan/bienvenida/$idOnboarding'),
+      headers: headers,
+    );
+    return _handleResponse(response);
+  }
+
+  static Future<void> actualizarBienvenida({
+    required int idPlan,
+    required String? mensaje,
+  }) async {
+    final headers = await getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/planes/$idPlan/bienvenida'),
+      headers: headers,
+      body: jsonEncode({'mensaje_bienvenida': mensaje}),
+    );
+    _handleResponse(response);
+  }
+
+  // Agregar en lib/services/api_service.dart dentro de la clase ApiService:
+
+static Future<Map<String, dynamic>> chatAdminMensaje({
+  required String mensaje,
+  required List<Map<String, String>> historial,
+}) async {
+  final headers = await getHeaders();
+  final response = await http.post(
+    Uri.parse('$baseUrl/chat/admin/mensaje'),
+    headers: headers,
+    body: jsonEncode({
+      'mensaje': mensaje,
+      'historial': historial,
+    }),
+  );
+  return _handleResponse(response);
+}
+
+static Future<Map<String, dynamic>> chatAdminCrearPlan({
+  required Map<String, dynamic> sugerencia,
+}) async {
+  final headers = await getHeaders();
+  final response = await http.post(
+    Uri.parse('$baseUrl/chat/admin/crear-plan'),
+    headers: headers,
+    body: jsonEncode({'sugerencia': sugerencia}),
+  );
+  return _handleResponse(response);
+}
 }

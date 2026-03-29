@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../models/chat_models.dart';
-import '../../services/ai_service.dart';
-import '../../services/admin_chat_prompts.dart';
+import '../../services/api_service.dart';
 import 'widgets/burbuja_mensaje.dart';
 import 'widgets/tarjeta_plan.dart';
 
@@ -15,12 +14,13 @@ class AdminChatScreen extends StatefulWidget {
 
 class _AdminChatScreenState extends State<AdminChatScreen> {
   final _controller = TextEditingController();
-  final _scroll = ScrollController();
+  final _scroll     = ScrollController();
   final List<ChatMensaje> _mensajes = [];
-  final List<AiMessage> _historial = [];
+  // Historial en formato que espera el backend
+  final List<Map<String, String>> _historial = [];
   bool _cargando = false;
 
-  static const _morado = Color(0xFF534AB7);
+  static const _morado      = Color(0xFF534AB7);
   static const _moradoClaro = Color(0xFFEEEDFE);
 
   @override
@@ -28,7 +28,8 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     super.initState();
     _mensajes.add(ChatMensaje(
       rol: 'assistant',
-      texto: 'Hola, soy tu asistente para crear planes de onboarding. Descríbeme el perfil del nuevo empleado y genero un plan personalizado.',
+      texto: 'Hola, soy tu asistente para crear planes de onboarding. '
+             'Descríbeme el perfil del nuevo empleado y genero un plan personalizado.',
     ));
   }
 
@@ -58,23 +59,27 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     _controller.clear();
     setState(() {
       _mensajes.add(ChatMensaje(rol: 'user', texto: texto));
-      _historial.add(AiMessage(role: 'user', content: texto));
       _cargando = true;
     });
     _scrollAbajo();
 
     try {
-      final respuestaRaw = await AiService.sendMessage(
-        history: List.from(_historial),
-        systemPrompt: AdminChatPrompts.systemPrompt(),
+      // Llamar al backend — el backend llama a Groq
+      final respuesta = await ApiService.chatAdminMensaje(
+        mensaje: texto,
+        historial: List.from(_historial),
       );
 
-      final json = jsonDecode(respuestaRaw) as Map<String, dynamic>;
-      final textoRespuesta = json['texto'] as String;
-      final planJson = json['plan'] as Map<String, dynamic>?;
+      final textoRespuesta = respuesta['texto'] as String? ?? '';
+      final planJson = respuesta['plan'] as Map<String, dynamic>?;
       final plan = planJson != null ? PlanSugerido.fromJson(planJson) : null;
 
-      _historial.add(AiMessage(role: 'assistant', content: respuestaRaw));
+      // Actualizar historial para mantener contexto en el siguiente mensaje
+      _historial.add({'role': 'user', 'content': texto});
+      _historial.add({
+        'role': 'assistant',
+        'content': jsonEncode(respuesta),
+      });
 
       setState(() {
         _mensajes.add(ChatMensaje(rol: 'assistant', texto: textoRespuesta, plan: plan));
@@ -82,22 +87,39 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
       });
     } catch (e) {
       setState(() {
-        _mensajes.add(ChatMensaje(rol: 'assistant', texto: 'Hubo un error al generar el plan. Intenta de nuevo.'));
+        _mensajes.add(ChatMensaje(
+          rol: 'assistant',
+          texto: 'Hubo un error al generar el plan. Intenta de nuevo.',
+        ));
         _cargando = false;
       });
     }
     _scrollAbajo();
   }
 
-  void _crearPlan(PlanSugerido plan) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Plan "${plan.titulo}" creado correctamente'),
-        backgroundColor: _morado,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+  Future<void> _crearPlan(PlanSugerido plan) async {
+    try {
+      await ApiService.chatAdminCrearPlan(sugerencia: plan.toJson());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Plan "${plan.titulo}" creado correctamente'),
+          backgroundColor: _morado,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al crear el plan: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
   }
 
   void _ajustarPlan() {
@@ -129,7 +151,8 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text('Asistente de planes',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A))),
                 Text('Describe el perfil del empleado',
                     style: TextStyle(fontSize: 11, color: Color(0xFF888780))),
               ],
@@ -140,9 +163,11 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: _moradoClaro, borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(
+                color: _moradoClaro, borderRadius: BorderRadius.circular(20)),
             child: const Text('Admin',
-                style: TextStyle(fontSize: 11, color: _morado, fontWeight: FontWeight.w500)),
+                style: TextStyle(
+                    fontSize: 11, color: _morado, fontWeight: FontWeight.w500)),
           ),
         ],
         bottom: PreferredSize(
@@ -195,14 +220,16 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                     style: const TextStyle(fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Describe el perfil del empleado...',
-                      hintStyle: const TextStyle(color: Color(0xFF888780), fontSize: 14),
+                      hintStyle:
+                          const TextStyle(color: Color(0xFF888780), fontSize: 14),
                       filled: true,
                       fillColor: const Color(0xFFF5F4EE),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                     ),
                   ),
                 ),
@@ -216,7 +243,8 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                       color: _cargando ? const Color(0xFFAFA9EC) : _morado,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                    child: const Icon(Icons.send_rounded,
+                        color: Colors.white, size: 18),
                   ),
                 ),
               ],
@@ -234,13 +262,16 @@ class _TypingIndicator extends StatefulWidget {
   State<_TypingIndicator> createState() => _TypingIndicatorState();
 }
 
-class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerProviderStateMixin {
+class _TypingIndicatorState extends State<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
   late AnimationController _anim;
 
   @override
   void initState() {
     super.initState();
-    _anim = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+    _anim = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900))
+      ..repeat();
   }
 
   @override
@@ -258,7 +289,8 @@ class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerPro
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16).copyWith(bottomLeft: const Radius.circular(4)),
+          borderRadius: BorderRadius.circular(16)
+              .copyWith(bottomLeft: const Radius.circular(4)),
           border: Border.all(color: const Color(0xFFE0DFD8), width: 0.5),
         ),
         child: AnimatedBuilder(
@@ -269,7 +301,8 @@ class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerPro
               final opacity = ((_anim.value * 3 - i) % 1).clamp(0.2, 1.0);
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 2),
-                width: 7, height: 7,
+                width: 7,
+                height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: const Color(0xFF888780).withOpacity(opacity),
