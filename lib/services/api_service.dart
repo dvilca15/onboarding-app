@@ -185,6 +185,8 @@ class ApiService {
     String tipo = 'CONFIRMACION',
     bool obligatorio = true,
     int orden = 1,
+    String? descripcion,      // ← nuevo
+    String? urlContenido,     // ← nuevo
   }) async {
     final headers = await getHeaders();
     final response = await http.post(
@@ -195,6 +197,8 @@ class ApiService {
         'tipo': tipo,
         'obligatorio': obligatorio,
         'orden': orden,
+        if (descripcion != null) 'descripcion': descripcion,
+        if (urlContenido != null) 'url_contenido': urlContenido,
       }),
     );
     return _handleResponse(response);
@@ -478,6 +482,8 @@ static Future<Map<String, dynamic>> editarTask({
   String? tipo,
   bool? obligatorio,
   int? orden,
+  String? descripcion,
+  String? urlContenido,
 }) async {
   final headers = await getHeaders();
   final body = <String, dynamic>{};
@@ -485,11 +491,55 @@ static Future<Map<String, dynamic>> editarTask({
   if (tipo != null) body['tipo'] = tipo;
   if (obligatorio != null) body['obligatorio'] = obligatorio;
   if (orden != null) body['orden'] = orden;
+  // Siempre enviar aunque sea null para limpiar el campo
+  body['descripcion'] = descripcion;
+  body['url_contenido'] = urlContenido;
   final response = await http.put(
     Uri.parse('$baseUrl/steps/$idStep/tasks/$idTask'),
     headers: headers,
     body: jsonEncode(body),
   );
   return _handleResponse(response);
+}
+
+static Future<void> enviarRespuestasFormulario({
+  required int idOnboarding,
+  required int idTask,
+  required int idStep,
+  required List<Map<String, String>> respuestas,
+}) async {
+  final headers = await getHeaders();
+  final response = await http.post(
+    Uri.parse('$baseUrl/steps/$idStep/tasks/$idTask/respuestas?id_onboarding=$idOnboarding'),
+    headers: headers,
+    body: jsonEncode({'respuestas': respuestas}),
+  );
+  _handleResponse(response);
+}
+
+static Future<Map<String, dynamic>> subirArchivoTaskWeb({
+  required int idStep,
+  required int idTask,
+  required List<int> bytes,
+  required String nombreArchivo,
+}) async {
+  final token = await getToken();
+  final request = http.MultipartRequest(
+    'POST',
+    Uri.parse('$baseUrl/steps/$idStep/tasks/$idTask/upload'),
+  );
+  request.headers['Authorization'] = 'Bearer $token';
+  request.files.add(http.MultipartFile.fromBytes(
+    'archivo',
+    bytes,
+    filename: nombreArchivo,
+  ));
+  final response = await request.send();
+  final body = await response.stream.bytesToString();
+  if (response.statusCode != 200) {
+    final data = jsonDecode(body);
+    throw Exception(data['detail'] ?? 'Error al subir archivo');
+  }
+  return jsonDecode(body) as Map<String, dynamic>;
 }
 }

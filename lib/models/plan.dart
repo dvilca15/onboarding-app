@@ -36,6 +36,8 @@ class Task {
   final String tipo;
   final bool obligatorio;
   final int orden;
+  final String? urlContenido;  // ← nuevo
+  final String? descripcion;  // ← nuevo
 
   const Task({
     required this.idTask,
@@ -44,15 +46,19 @@ class Task {
     required this.tipo,
     required this.obligatorio,
     required this.orden,
+    this.urlContenido,
+    this.descripcion,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
-        idTask:      json['id_task'] as int,
-        idStep:      json['id_step'] as int,
-        titulo:      json['titulo'] as String,
-        tipo:        json['tipo'] as String,
-        obligatorio: json['obligatorio'] as bool,
-        orden:       json['orden'] as int,
+        idTask:       json['id_task'] as int,
+        idStep:       json['id_step'] as int,
+        titulo:       json['titulo'] as String,
+        tipo:         json['tipo'] as String,
+        obligatorio:  json['obligatorio'] as bool,
+        orden:        json['orden'] as int,
+        urlContenido: json['url_contenido'] as String?,
+        descripcion:  json['descripcion'] as String?,
       );
 }
 

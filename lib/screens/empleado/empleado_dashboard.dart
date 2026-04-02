@@ -154,6 +154,33 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
     }
   }
 
+  Future<void> _enviarFormulario(
+    int idTask, List<Map<String, String>> respuestas) async {
+  if (_onboardingSeleccionado == null) return;
+  try {
+    await ApiService.enviarRespuestasFormulario(
+      idOnboarding: _onboardingSeleccionado!,
+      idTask: idTask,
+      idStep: _detalle!.stepsConProgreso
+          .firstWhere((s) => s.tasks.any((t) => t.idTask == idTask))
+          .idStep,
+      respuestas: respuestas,
+    );
+    await _cargarDetalle(_onboardingSeleccionado!);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Respuestas enviadas'),
+          backgroundColor: Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating),
+    );
+  } catch (e) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating),
+    );
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -411,6 +438,7 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
           ...steps.asMap().entries.map((e) => StepCard(
             step: e.value,
             numero: e.key + 1,
+            idOnboarding: _onboardingSeleccionado!,
             expandido: _stepsExpandidos.contains(e.value.idStep),
             onToggle: () => setState(() {
               _stepsExpandidos.contains(e.value.idStep)
@@ -418,6 +446,7 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
                   : _stepsExpandidos.add(e.value.idStep);
             }),
             onCompletarTask: _completarTask,
+            onEnviarFormulario: _enviarFormulario,
           )),
       ]),
     );

@@ -63,6 +63,8 @@ class TaskProgressDetalle {
   final String tipo;
   final bool obligatorio;
   final int orden;
+  final String? urlContenido;   // URL del archivo o video
+  final String? descripcion;   // Instrucciones o preguntas del formulario
 
   const TaskProgressDetalle({
     required this.idTaskProgress,
@@ -74,21 +76,25 @@ class TaskProgressDetalle {
     required this.tipo,
     required this.obligatorio,
     required this.orden,
+    this.urlContenido,
+    this.descripcion,
   });
 
   factory TaskProgressDetalle.fromJson(Map<String, dynamic> json) =>
       TaskProgressDetalle(
         idTaskProgress: json['id_task_progress'] as int,
-        idTask: json['id_task'] as int,
-        idStep: json['id_step'] as int,
-        estado: json['estado'] as String,
+        idTask:         json['id_task'] as int,
+        idStep:         json['id_step'] as int,
+        estado:         json['estado'] as String,
         fechaCompletada: json['fecha_completada'] != null
             ? DateTime.tryParse(json['fecha_completada'] as String)
             : null,
-        titulo: json['titulo'] as String,
-        tipo: json['tipo'] as String,
-        obligatorio: json['obligatorio'] as bool,
-        orden: json['orden'] as int,
+        titulo:       json['titulo'] as String,
+        tipo:         json['tipo'] as String,
+        obligatorio:  json['obligatorio'] as bool,
+        orden:        json['orden'] as int,
+        urlContenido: json['url_contenido'] as String?,
+        descripcion:  json['descripcion'] as String?,
       );
 
   bool get completada => estado == 'COMPLETADO';
@@ -118,14 +124,13 @@ class StepConProgreso {
 
   factory StepConProgreso.fromJson(Map<String, dynamic> json) =>
       StepConProgreso(
-        idStep: json['id_step'] as int,
-        titulo: json['titulo'] as String,
-        descripcion: json['descripcion'] as String?,
-        orden: json['orden'] as int,
+        idStep:       json['id_step'] as int,
+        titulo:       json['titulo'] as String,
+        descripcion:  json['descripcion'] as String?,
+        orden:        json['orden'] as int,
         duracionDias: json['duracion_dias'] as int?,
         tasks: (json['tasks'] as List<dynamic>? ?? [])
-            .map((t) =>
-                TaskProgressDetalle.fromJson(t as Map<String, dynamic>))
+            .map((t) => TaskProgressDetalle.fromJson(t as Map<String, dynamic>))
             .toList(),
         totalTasks: json['total_tasks'] as int? ?? 0,
         completadas: json['completadas'] as int? ?? 0,
@@ -158,9 +163,9 @@ class OnboardingDetalle extends Onboarding {
   factory OnboardingDetalle.fromJson(Map<String, dynamic> json) =>
       OnboardingDetalle(
         idEmployeeOnboarding: json['id_employee_onboarding'] as int,
-        idPlan: json['id_plan'] as int,
-        idUser: json['id_user'] as int,
-        estado: json['estado'] as String,
+        idPlan:   json['id_plan'] as int,
+        idUser:   json['id_user'] as int,
+        estado:   json['estado'] as String,
         progreso: double.tryParse(json['progreso'].toString()) ?? 0.0,
         fechaInicio: json['fecha_inicio'] != null
             ? DateTime.tryParse(json['fecha_inicio'] as String)
@@ -170,11 +175,10 @@ class OnboardingDetalle extends Onboarding {
             : null,
         fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
         nombreEmpleado: json['nombre_empleado'] as String? ?? '',
-        nombrePlan: json['nombre_plan'] as String? ?? '',
+        nombrePlan:     json['nombre_plan'] as String? ?? '',
         stepsConProgreso:
             (json['steps_con_progreso'] as List<dynamic>? ?? [])
-                .map((s) =>
-                    StepConProgreso.fromJson(s as Map<String, dynamic>))
+                .map((s) => StepConProgreso.fromJson(s as Map<String, dynamic>))
                 .toList(),
       );
 }

@@ -16,6 +16,10 @@ import 'modals/nuevo_empleado_modal.dart';
 import 'modals/nuevo_plan_modal.dart';
 import 'modals/asignar_plan_modal.dart';
 import 'modals/eliminar_plan_modal.dart';
+import 'widgets/formulario_builder.dart';
+import 'widgets/formulario_builder.dart';
+
+import 'package:file_picker/file_picker.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -150,14 +154,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   void _showNuevoTask(int idStep, {int? idPlan, int cantidadTasks = 0, VoidCallback? onCreated}) {
     final tituloCtrl     = TextEditingController();
-    final ordenCtrl = TextEditingController(text: '${cantidadTasks + 1}');
+    final ordenCtrl      = TextEditingController(text: '${cantidadTasks + 1}');
     final bienvenidaCtrl = TextEditingController();
+    final urlVideoCtrl   = TextEditingController();
+    List<PreguntaFormulario> preguntasData = [];
     String tipo          = 'CONFIRMACION';
     bool obligatorio     = true;
     bool loading         = false;
     final formKey        = GlobalKey<FormState>();
     const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO', 'BIENVENIDA'];
-
+ 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -168,17 +174,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: SizedBox(width: 400, child: Form(key: formKey, child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Título — oculto si es BIENVENIDA
                 if (tipo != 'BIENVENIDA') ...[
                   modalField('Título', tituloCtrl, Icons.task_outlined,
                       (v) => v!.isEmpty ? 'Requerido' : null),
                   const SizedBox(height: 12),
                 ],
+ 
+                // Dropdown tipo
                 DropdownButtonFormField<String>(
                   value: tipo,
                   decoration: inputDec('Tipo', Icons.category_outlined),
                   items: tipos.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                   onChanged: (v) => set(() => tipo = v!),
                 ),
+ 
+                // ── BIENVENIDA ──
                 if (tipo == 'BIENVENIDA') ...[
                   const SizedBox(height: 12),
                   Container(
@@ -191,30 +202,97 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       Icon(Icons.info_outline, size: 14, color: Color(0xFF7C3AED)),
                       SizedBox(width: 6),
                       Expanded(child: Text(
-                        'El empleado verá este mensaje al entrar por primera vez y contará como progreso.',
+                        'El empleado verá este mensaje al entrar por primera vez.',
                         style: TextStyle(fontSize: 11, color: Color(0xFF7C3AED)),
                       )),
                     ]),
                   ),
                   const SizedBox(height: 12),
-                  modalField(
-                    'Escribe el mensaje de bienvenida...',
-                    bienvenidaCtrl,
-                    Icons.waving_hand_outlined,
-                    (v) => v!.isEmpty ? 'Requerido' : null,
-                    maxLines: 4,
-                  ),
-                ] else ...[
+                  modalField('Escribe el mensaje de bienvenida...', bienvenidaCtrl,
+                      Icons.waving_hand_outlined,
+                      (v) => v!.isEmpty ? 'Requerido' : null, maxLines: 4),
+                ]
+ 
+                // ── VIDEO ──
+                else if (tipo == 'VIDEO') ...[
+                  const SizedBox(height: 12),
+                  modalField('URL del video (YouTube, Drive, etc.)', urlVideoCtrl,
+                      Icons.play_circle_outline_rounded,
+                      (v) => v!.isEmpty ? 'Requerido' : null),
                   const SizedBox(height: 12),
                   Row(children: [
                     Expanded(child: modalField('Orden', ordenCtrl, Icons.format_list_numbered, (v) {
-                        if (v!.isEmpty) return 'Requerido';
-                        final n = int.tryParse(v);
-                        if (n == null) return 'Número';
-                        if (n < 1) return 'Mínimo 1';
-                        if (n <= cantidadTasks) return 'Ya existe orden $n — usa ${cantidadTasks + 1}';
-                        return null;
-                      }, keyboardType: TextInputType.number)),
+                      if (v!.isEmpty) return 'Requerido';
+                      final n = int.tryParse(v);
+                      if (n == null) return 'Número';
+                      if (n < 1) return 'Mínimo 1';
+                      if (n <= cantidadTasks) return 'Ya existe orden $n — usa ${cantidadTasks + 1}';
+                      return null;
+                    }, keyboardType: TextInputType.number)),
+                    const SizedBox(width: 12),
+                    Row(children: [
+                      Switch(value: obligatorio, onChanged: (v) => set(() => obligatorio = v),
+                          activeColor: const Color(0xFF1565C0)),
+                      const Text('Obligatoria', style: TextStyle(fontSize: 13)),
+                    ]),
+                  ]),
+                ]
+ 
+                // ── FORMULARIO ──
+                else if (tipo == 'FORMULARIO') ...[
+                  const SizedBox(height: 12),
+                  FormularioBuilder(
+                    preguntasIniciales: const [],
+                    onChanged: (lista) => preguntasData = lista,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(child: modalField('Orden', ordenCtrl, Icons.format_list_numbered, (v) {
+                      if (v!.isEmpty) return 'Requerido';
+                      final n = int.tryParse(v);
+                      if (n == null) return 'Número';
+                      if (n < 1) return 'Mínimo 1';
+                      if (n <= cantidadTasks) return 'Ya existe orden $n — usa ${cantidadTasks + 1}';
+                      return null;
+                    }, keyboardType: TextInputType.number)),
+                    const SizedBox(width: 12),
+                    Row(children: [
+                      Switch(value: obligatorio, onChanged: (v) => set(() => obligatorio = v),
+                          activeColor: const Color(0xFF1565C0)),
+                      const Text('Obligatoria', style: TextStyle(fontSize: 13)),
+                    ]),
+                  ]),
+                ]
+ 
+                // ── CONFIRMACION / DOCUMENTO ──
+                else ...[
+                  const SizedBox(height: 12),
+                  if (tipo == 'DOCUMENTO')
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(children: const [
+                        Icon(Icons.info_outline, size: 14, color: Color(0xFF3B82F6)),
+                        SizedBox(width: 6),
+                        Expanded(child: Text(
+                          'Crea la tarea primero y luego sube el archivo PDF desde "Editar tarea".',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF3B82F6)),
+                        )),
+                      ]),
+                    ),
+                  if (tipo == 'DOCUMENTO') const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(child: modalField('Orden', ordenCtrl, Icons.format_list_numbered, (v) {
+                      if (v!.isEmpty) return 'Requerido';
+                      final n = int.tryParse(v);
+                      if (n == null) return 'Número';
+                      if (n < 1) return 'Mínimo 1';
+                      if (n <= cantidadTasks) return 'Ya existe orden $n — usa ${cantidadTasks + 1}';
+                      return null;
+                    }, keyboardType: TextInputType.number)),
                     const SizedBox(width: 12),
                     Row(children: [
                       Switch(value: obligatorio, onChanged: (v) => set(() => obligatorio = v),
@@ -247,12 +325,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       onCreated?.call();
                     }
                   } else {
+                    String? descripcion;
+                    String? urlContenido;
+ 
+                    if (tipo == 'FORMULARIO') {
+                      descripcion = PreguntaFormulario.serializarLista(preguntasData);
+                    } else if (tipo == 'VIDEO') {
+                      urlContenido = urlVideoCtrl.text.trim();
+                    }
+ 
                     await ApiService.crearTask(
                       idStep: idStep,
                       titulo: tituloCtrl.text.trim(),
                       tipo: tipo,
                       obligatorio: obligatorio,
                       orden: int.parse(ordenCtrl.text),
+                      descripcion: descripcion,
+                      urlContenido: urlContenido,
                     );
                     if (mounted) {
                       Navigator.pop(ctx);
@@ -497,88 +586,202 @@ class _AdminDashboardState extends State<AdminDashboard> {
 }
 
 void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
-  final tituloCtrl = TextEditingController(text: task.titulo);
-  final ordenCtrl  = TextEditingController(text: '${task.orden}');
-  String tipo      = task.tipo;
-  bool obligatorio = task.obligatorio;
-  final formKey    = GlobalKey<FormState>();
-  bool loading     = false;
-  const tipos      = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO'];
-
-  showDialog(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, set) => AlertDialog(
-        title: const Text('Editar tarea',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        content: SizedBox(width: 400, child: Form(key: formKey, child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            modalField('Título', tituloCtrl, Icons.task_outlined,
-                (v) => v!.isEmpty ? 'Requerido' : null),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: tipos.contains(tipo) ? tipo : 'CONFIRMACION',
-              decoration: inputDec('Tipo', Icons.category_outlined),
-              items: tipos.map((t) =>
-                  DropdownMenuItem(value: t, child: Text(t))).toList(),
-              onChanged: (v) => set(() => tipo = v!),
-            ),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(child: modalField('Orden', ordenCtrl,
-                  Icons.format_list_numbered, (v) {
-                if (v!.isEmpty) return 'Requerido';
-                if (int.tryParse(v) == null) return 'Número';
-                return null;
-              }, keyboardType: TextInputType.number)),
-              const SizedBox(width: 12),
-              Row(children: [
-                Switch(
-                  value: obligatorio,
-                  onChanged: (v) => set(() => obligatorio = v),
-                  activeColor: const Color(0xFF1565C0),
+    final tituloCtrl    = TextEditingController(text: task.titulo);
+    final ordenCtrl     = TextEditingController(text: '${task.orden}');
+    final urlVideoCtrl  = TextEditingController(text: task.urlContenido ?? '');
+    List<PreguntaFormulario> preguntasEditData = task.descripcion != null
+        ? PreguntaFormulario.parsearDescripcion(task.descripcion!)
+        : [];
+    bool archivoSubido  = task.urlContenido != null;
+    String tipo         = task.tipo;
+    bool obligatorio    = task.obligatorio;
+    final formKey       = GlobalKey<FormState>();
+    bool loading        = false;
+    const tipos         = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO'];
+ 
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, set) => AlertDialog(
+          title: const Text('Editar tarea',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          content: SingleChildScrollView(
+            child: SizedBox(width: 400, child: Form(key: formKey, child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                modalField('Título', tituloCtrl, Icons.task_outlined,
+                    (v) => v!.isEmpty ? 'Requerido' : null),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: tipos.contains(tipo) ? tipo : 'CONFIRMACION',
+                  decoration: inputDec('Tipo', Icons.category_outlined),
+                  items: tipos.map((t) =>
+                      DropdownMenuItem(value: t, child: Text(t))).toList(),
+                  onChanged: (v) => set(() => tipo = v!),
                 ),
-                const Text('Obligatoria', style: TextStyle(fontSize: 13)),
-              ]),
-            ]),
-          ],
-        ))),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar',
-                  style: TextStyle(color: Color(0xFF6B7280)))),
-          ElevatedButton(
-            onPressed: loading ? null : () async {
-              if (!formKey.currentState!.validate()) return;
-              set(() => loading = true);
-              try {
-                await ApiService.editarTask(
-                  idStep: idStep,
-                  idTask: task.idTask,
-                  titulo: tituloCtrl.text.trim(),
-                  tipo: tipo,
-                  obligatorio: obligatorio,
-                  orden: int.parse(ordenCtrl.text),
-                );
-                if (mounted) {
-                  Navigator.pop(ctx);
-                  showSnack(context, 'Tarea actualizada', success: true);
-                  onGuardado();
-                }
-              } catch (e) {
-                set(() => loading = false);
-                showSnack(context, e.toString().replaceAll('Exception: ', ''));
-              }
-            },
-            style: primaryBtnStyle(),
-            child: loading ? btnSpinner() : const Text('Guardar cambios'),
+                const SizedBox(height: 12),
+ 
+                // ── VIDEO ──
+                if (tipo == 'VIDEO') ...[
+                  modalField('URL del video (YouTube, Drive, etc.)', urlVideoCtrl,
+                      Icons.play_circle_outline_rounded, (_) => null),
+                  const SizedBox(height: 12),
+                ],
+ 
+                // ── FORMULARIO ──
+                if (tipo == 'FORMULARIO') ...[
+                  FormularioBuilder(
+                    preguntasIniciales: preguntasEditData,
+                    onChanged: (lista) => preguntasEditData = lista,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+ 
+                // ── DOCUMENTO ──
+                if (tipo == 'DOCUMENTO') ...[
+                  if (archivoSubido)
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(children: const [
+                        Icon(Icons.check_circle_outline, size: 14, color: Color(0xFF16A34A)),
+                        SizedBox(width: 6),
+                        Expanded(child: Text('Archivo cargado correctamente.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF16A34A)))),
+                      ]),
+                    ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: loading ? null : () async {
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+                          withData: true,
+                        );
+                        if (result == null) return;
+                        final file = result.files.single;
+                        if (file.bytes == null) return;
+                        set(() => loading = true);
+                        try {
+                          await ApiService.subirArchivoTaskWeb(
+                            idStep: idStep,
+                            idTask: task.idTask,
+                            bytes: file.bytes!,
+                            nombreArchivo: file.name,
+                          );
+                          set(() { loading = false; archivoSubido = true; });
+                          if (mounted) showSnack(context, 'Archivo subido correctamente', success: true);
+                        } catch (e) {
+                          set(() => loading = false);
+                          if (mounted) showSnack(context, e.toString().replaceAll('Exception: ', ''));
+                        }
+                      },
+                      icon: loading
+                          ? const SizedBox(width: 14, height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF3B82F6)))
+                          : const Icon(Icons.upload_file_outlined, size: 16),
+                      label: Text(
+                        archivoSubido ? 'Reemplazar archivo' : 'Subir PDF / imagen',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF3B82F6),
+                        side: const BorderSide(color: Color(0xFF3B82F6)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+ 
+                // Orden y obligatorio
+                Row(children: [
+                  Expanded(child: modalField('Orden', ordenCtrl,
+                      Icons.format_list_numbered, (v) {
+                    if (v!.isEmpty) return 'Requerido';
+                    if (int.tryParse(v) == null) return 'Número';
+                    return null;
+                  }, keyboardType: TextInputType.number)),
+                  const SizedBox(width: 12),
+                  Row(children: [
+                    Switch(
+                      value: obligatorio,
+                      onChanged: (v) => set(() => obligatorio = v),
+                      activeColor: const Color(0xFF1565C0),
+                    ),
+                    const Text('Obligatoria', style: TextStyle(fontSize: 13)),
+                  ]),
+                ]),
+              ],
+            ))),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: loading ? null : () async {
+                if (!formKey.currentState!.validate()) return;
+                set(() => loading = true);
+                try {
+                  String? descripcion;
+                  String? urlContenido;
+ 
+                  if (tipo == 'FORMULARIO') {
+                    descripcion = preguntasEditData.isNotEmpty
+                        ? PreguntaFormulario.serializarLista(preguntasEditData)
+                        : null;
+                  }
+                  if (tipo == 'VIDEO' && urlVideoCtrl.text.trim().isNotEmpty) {
+                    urlContenido = urlVideoCtrl.text.trim();
+                  }
+ 
+                  await ApiService.editarTask(
+                    idStep: idStep,
+                    idTask: task.idTask,
+                    titulo: tituloCtrl.text.trim(),
+                    tipo: tipo,
+                    obligatorio: obligatorio,
+                    orden: int.parse(ordenCtrl.text),
+                    descripcion: descripcion,
+                    urlContenido: urlContenido,
+                  );
+                  if (mounted) {
+                    Navigator.pop(ctx);
+                    showSnack(context, 'Tarea actualizada', success: true);
+                    onGuardado();
+                  }
+                } catch (e) {
+                  set(() => loading = false);
+                  showSnack(context, e.toString().replaceAll('Exception: ', ''));
+                }
+              },
+              style: primaryBtnStyle(),
+              child: loading ? btnSpinner() : const Text('Guardar cambios'),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+  // Helper para mostrar preguntas del formulario como texto plano
+  String _parsearPreguntas(String descripcion) {
+    try {
+      final lista = List<dynamic>.from(
+        descripcion.replaceAll('["', '').replaceAll('"]', '').split('","')
+      );
+      return lista.join('\n');
+    } catch (_) {
+      return descripcion;
+    }
+  }
 
 void _showPlanDetalle(Plan plan) {
     showDialog(
