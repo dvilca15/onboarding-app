@@ -446,4 +446,50 @@ static Future<Map<String, dynamic>> chatAdminCrearPlan({
   );
   return _handleResponse(response);
 }
+
+// ── Steps — editar ─────────────────────────────────────────
+static Future<Map<String, dynamic>> editarStep({
+  required int idPlan,
+  required int idStep,
+  String? titulo,
+  String? descripcion,
+  int? orden,
+  int? duracionDias,
+}) async {
+  final headers = await getHeaders();
+  final body = <String, dynamic>{};
+  if (titulo != null) body['titulo'] = titulo;
+  if (descripcion != null) body['descripcion'] = descripcion;
+  if (orden != null) body['orden'] = orden;
+  if (duracionDias != null) body['duracion_dias'] = duracionDias;
+  final response = await http.put(
+    Uri.parse('$baseUrl/planes/$idPlan/steps/$idStep'),
+    headers: headers,
+    body: jsonEncode(body),
+  );
+  return _handleResponse(response);
+}
+
+// ── Tasks — editar ──────────────────────────────────────────
+static Future<Map<String, dynamic>> editarTask({
+  required int idStep,
+  required int idTask,
+  String? titulo,
+  String? tipo,
+  bool? obligatorio,
+  int? orden,
+}) async {
+  final headers = await getHeaders();
+  final body = <String, dynamic>{};
+  if (titulo != null) body['titulo'] = titulo;
+  if (tipo != null) body['tipo'] = tipo;
+  if (obligatorio != null) body['obligatorio'] = obligatorio;
+  if (orden != null) body['orden'] = orden;
+  final response = await http.put(
+    Uri.parse('$baseUrl/steps/$idStep/tasks/$idTask'),
+    headers: headers,
+    body: jsonEncode(body),
+  );
+  return _handleResponse(response);
+}
 }

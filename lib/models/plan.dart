@@ -18,13 +18,13 @@ class Plan {
   });
 
   factory Plan.fromJson(Map<String, dynamic> json) => Plan(
-        idPlan:             json['id_plan'] as int,
-        idEmpresa:          json['id_empresa'] as int,
-        nombre:             json['nombre'] as String,
-        descripcion:        json['descripcion'] as String?,
-        esPlantilla:        json['es_plantilla'] as bool? ?? false,
-        fechaCreacion:      DateTime.parse(json['fecha_creacion'] as String),
-        mensajeBienvenida:  json['mensaje_bienvenida'] as String?,
+        idPlan:            json['id_plan'] as int,
+        idEmpresa:         json['id_empresa'] as int,
+        nombre:            json['nombre'] as String,
+        descripcion:       json['descripcion'] as String?,
+        esPlantilla:       json['es_plantilla'] as bool? ?? false,
+        fechaCreacion:     DateTime.parse(json['fecha_creacion'] as String),
+        mensajeBienvenida: json['mensaje_bienvenida'] as String?,
       );
 }
 
@@ -47,17 +47,17 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
-        idTask:     json['id_task'] as int,
-        idStep:     json['id_step'] as int,
-        titulo:     json['titulo'] as String,
-        tipo:       json['tipo'] as String,
+        idTask:      json['id_task'] as int,
+        idStep:      json['id_step'] as int,
+        titulo:      json['titulo'] as String,
+        tipo:        json['tipo'] as String,
         obligatorio: json['obligatorio'] as bool,
-        orden:      json['orden'] as int,
+        orden:       json['orden'] as int,
       );
 }
 
 
-class Step {
+class OnboardingStep {
   final int idStep;
   final int idPlan;
   final String titulo;
@@ -66,7 +66,7 @@ class Step {
   final int? duracionDias;
   final List<Task> tasks;
 
-  const Step({
+  const OnboardingStep({
     required this.idStep,
     required this.idPlan,
     required this.titulo,
@@ -76,7 +76,7 @@ class Step {
     this.tasks = const [],
   });
 
-  factory Step.fromJson(Map<String, dynamic> json) => Step(
+  factory OnboardingStep.fromJson(Map<String, dynamic> json) => OnboardingStep(
         idStep:       json['id_step'] as int,
         idPlan:       json['id_plan'] as int,
         titulo:       json['titulo'] as String,
@@ -91,7 +91,7 @@ class Step {
 
 
 class PlanDetalle extends Plan {
-  final List<Step> steps;
+  final List<OnboardingStep> steps;
 
   const PlanDetalle({
     required super.idPlan,
@@ -113,7 +113,7 @@ class PlanDetalle extends Plan {
         fechaCreacion:     DateTime.parse(json['fecha_creacion'] as String),
         mensajeBienvenida: json['mensaje_bienvenida'] as String?,
         steps: (json['steps'] as List<dynamic>? ?? [])
-            .map((s) => Step.fromJson(s as Map<String, dynamic>))
+            .map((s) => OnboardingStep.fromJson(s as Map<String, dynamic>))
             .toList(),
       );
 }

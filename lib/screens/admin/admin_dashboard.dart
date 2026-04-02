@@ -418,7 +418,169 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showPlanDetalle(Plan plan) {
+  void _showEditarStep(int idPlan, OnboardingStep step, VoidCallback onGuardado) {
+  final tituloCtrl = TextEditingController(text: step.titulo);
+  final descCtrl   = TextEditingController(text: step.descripcion ?? '');
+  final ordenCtrl  = TextEditingController(text: '${step.orden}');
+  final diasCtrl   = TextEditingController(
+      text: step.duracionDias != null ? '${step.duracionDias}' : '');
+  final formKey = GlobalKey<FormState>();
+  bool loading  = false;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, set) => AlertDialog(
+        title: const Text('Editar etapa',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: SizedBox(width: 400, child: Form(key: formKey, child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            modalField('Título', tituloCtrl, Icons.view_agenda_outlined,
+                (v) => v!.isEmpty ? 'Requerido' : null),
+            const SizedBox(height: 12),
+            modalField('Descripción (opcional)', descCtrl,
+                Icons.notes_outlined, (_) => null, maxLines: 2),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: modalField('Orden', ordenCtrl,
+                  Icons.format_list_numbered, (v) {
+                if (v!.isEmpty) return 'Requerido';
+                if (int.tryParse(v) == null) return 'Número';
+                return null;
+              }, keyboardType: TextInputType.number)),
+              const SizedBox(width: 12),
+              Expanded(child: modalField('Duración (días)', diasCtrl,
+                  Icons.calendar_today_outlined, (v) {
+                if (v!.isNotEmpty && int.tryParse(v) == null) return 'Número';
+                return null;
+              }, keyboardType: TextInputType.number)),
+            ]),
+          ],
+        ))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar',
+                  style: TextStyle(color: Color(0xFF6B7280)))),
+          ElevatedButton(
+            onPressed: loading ? null : () async {
+              if (!formKey.currentState!.validate()) return;
+              set(() => loading = true);
+              try {
+                await ApiService.editarStep(
+                  idPlan: idPlan,
+                  idStep: step.idStep,
+                  titulo: tituloCtrl.text.trim(),
+                  descripcion: descCtrl.text.trim().isEmpty
+                      ? null : descCtrl.text.trim(),
+                  orden: int.parse(ordenCtrl.text),
+                  duracionDias: diasCtrl.text.trim().isEmpty
+                      ? null : int.parse(diasCtrl.text),
+                );
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  showSnack(context, 'Etapa actualizada', success: true);
+                  onGuardado();
+                }
+              } catch (e) {
+                set(() => loading = false);
+                showSnack(context, e.toString().replaceAll('Exception: ', ''));
+              }
+            },
+            style: primaryBtnStyle(),
+            child: loading ? btnSpinner() : const Text('Guardar cambios'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
+  final tituloCtrl = TextEditingController(text: task.titulo);
+  final ordenCtrl  = TextEditingController(text: '${task.orden}');
+  String tipo      = task.tipo;
+  bool obligatorio = task.obligatorio;
+  final formKey    = GlobalKey<FormState>();
+  bool loading     = false;
+  const tipos      = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO'];
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, set) => AlertDialog(
+        title: const Text('Editar tarea',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: SizedBox(width: 400, child: Form(key: formKey, child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            modalField('Título', tituloCtrl, Icons.task_outlined,
+                (v) => v!.isEmpty ? 'Requerido' : null),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: tipos.contains(tipo) ? tipo : 'CONFIRMACION',
+              decoration: inputDec('Tipo', Icons.category_outlined),
+              items: tipos.map((t) =>
+                  DropdownMenuItem(value: t, child: Text(t))).toList(),
+              onChanged: (v) => set(() => tipo = v!),
+            ),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: modalField('Orden', ordenCtrl,
+                  Icons.format_list_numbered, (v) {
+                if (v!.isEmpty) return 'Requerido';
+                if (int.tryParse(v) == null) return 'Número';
+                return null;
+              }, keyboardType: TextInputType.number)),
+              const SizedBox(width: 12),
+              Row(children: [
+                Switch(
+                  value: obligatorio,
+                  onChanged: (v) => set(() => obligatorio = v),
+                  activeColor: const Color(0xFF1565C0),
+                ),
+                const Text('Obligatoria', style: TextStyle(fontSize: 13)),
+              ]),
+            ]),
+          ],
+        ))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar',
+                  style: TextStyle(color: Color(0xFF6B7280)))),
+          ElevatedButton(
+            onPressed: loading ? null : () async {
+              if (!formKey.currentState!.validate()) return;
+              set(() => loading = true);
+              try {
+                await ApiService.editarTask(
+                  idStep: idStep,
+                  idTask: task.idTask,
+                  titulo: tituloCtrl.text.trim(),
+                  tipo: tipo,
+                  obligatorio: obligatorio,
+                  orden: int.parse(ordenCtrl.text),
+                );
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  showSnack(context, 'Tarea actualizada', success: true);
+                  onGuardado();
+                }
+              } catch (e) {
+                set(() => loading = false);
+                showSnack(context, e.toString().replaceAll('Exception: ', ''));
+              }
+            },
+            style: primaryBtnStyle(),
+            child: loading ? btnSpinner() : const Text('Guardar cambios'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showPlanDetalle(Plan plan) {
     showDialog(
       context: context,
       builder: (ctx) => FutureBuilder<Map<String, dynamic>>(
@@ -529,10 +691,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFFF9FAFB),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFF9FAFB),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFFE5E7EB))),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+                      // ── Fila título del step ──
                       Row(children: [
                         Container(width: 24, height: 24,
                             decoration: BoxDecoration(color: const Color(0xFF7C3AED),
@@ -543,35 +708,131 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         const SizedBox(width: 8),
                         Expanded(child: Text(s.titulo,
                             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                        // Editar etapa
+                        InkWell(
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await Future.delayed(const Duration(milliseconds: 100));
+                            if (!mounted) return;
+                            _showEditarStep(
+                              plan.idPlan, s,
+                              () => _showPlanDetalle(plan),
+                            );
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.edit_outlined, size: 15, color: Color(0xFF1565C0)),
+                          ),
+                        ),
+                        // Eliminar etapa
+                        InkWell(
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await Future.delayed(const Duration(milliseconds: 100));
+                            if (!mounted) return;
+                            _confirmarEliminar(
+                              titulo: 'Eliminar etapa',
+                              mensaje: '¿Eliminar la etapa "${s.titulo}"?\n\nSe eliminarán todas sus tareas.',
+                              onConfirm: () async {
+                                try {
+                                  await ApiService.eliminarStep(
+                                      idPlan: plan.idPlan, idStep: s.idStep);
+                                  _loadData();
+                                  showSnack(context, 'Etapa eliminada', success: true);
+                                } catch (e) {
+                                  showSnack(context, e.toString().replaceAll('Exception: ', ''));
+                                }
+                              },
+                            );
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.delete_outline, size: 15, color: Color(0xFFDC2626)),
+                          ),
+                        ),
+                        // Agregar tarea
                         TextButton.icon(
                           onPressed: () async {
                             Navigator.pop(ctx);
                             await Future.delayed(const Duration(milliseconds: 100));
-                            if (mounted) _showNuevoTask(s.idStep,
+                            if (mounted) _showNuevoTask(
+                              s.idStep,
                               idPlan: plan.idPlan,
                               cantidadTasks: s.tasks.length,
-                              onCreated: () => _showPlanDetalle(plan));
+                              onCreated: () => _showPlanDetalle(plan),
+                            );
                           },
                           icon: const Icon(Icons.add, size: 14),
                           label: const Text('Tarea', style: TextStyle(fontSize: 12)),
                           style: TextButton.styleFrom(foregroundColor: const Color(0xFF7C3AED)),
                         ),
                       ]),
+
+                      // ── Tareas del step ──
                       if (s.tasks.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         ...s.tasks.map((t) => Padding(
-                          padding: const EdgeInsets.only(left: 32, bottom: 4),
+                          padding: const EdgeInsets.only(left: 16, bottom: 6),
                           child: Row(children: [
-                            const Icon(Icons.radio_button_unchecked, size: 14, color: Color(0xFF9CA3AF)),
+                            const Icon(Icons.radio_button_unchecked, size: 14,
+                                color: Color(0xFF9CA3AF)),
                             const SizedBox(width: 6),
                             Expanded(child: Text(t.titulo,
                                 style: const TextStyle(fontSize: 13))),
                             Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(color: const Color(0xFFE0F2FE),
+                                decoration: BoxDecoration(
+                                    color: const Color(0xFFE0F2FE),
                                     borderRadius: BorderRadius.circular(4)),
                                 child: Text(t.tipo,
-                                    style: const TextStyle(fontSize: 10, color: Color(0xFF0369A1)))),
+                                    style: const TextStyle(fontSize: 10,
+                                        color: Color(0xFF0369A1)))),
+                            const SizedBox(width: 4),
+                            // Editar tarea
+                            InkWell(
+                              onTap: () async {
+                                Navigator.pop(ctx);
+                                await Future.delayed(const Duration(milliseconds: 100));
+                                if (!mounted) return;
+                                _showEditarTask(
+                                  t, s.idStep,
+                                  () => _showPlanDetalle(plan),
+                                );
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.edit_outlined, size: 13,
+                                    color: Color(0xFF1565C0)),
+                              ),
+                            ),
+                            // Eliminar tarea
+                            InkWell(
+                              onTap: () async {
+                                Navigator.pop(ctx);
+                                await Future.delayed(const Duration(milliseconds: 100));
+                                if (!mounted) return;
+                                _confirmarEliminar(
+                                  titulo: 'Eliminar tarea',
+                                  mensaje: '¿Eliminar la tarea "${t.titulo}"?',
+                                  onConfirm: () async {
+                                    try {
+                                      await ApiService.eliminarTask(
+                                          idStep: s.idStep, idTask: t.idTask);
+                                      _loadData();
+                                      showSnack(context, 'Tarea eliminada', success: true);
+                                    } catch (e) {
+                                      showSnack(context,
+                                          e.toString().replaceAll('Exception: ', ''));
+                                    }
+                                  },
+                                );
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.delete_outline, size: 13,
+                                    color: Color(0xFFDC2626)),
+                              ),
+                            ),
                           ]),
                         )),
                       ] else Padding(
@@ -592,6 +853,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  
   void _showEditarBienvenida({
     required int idPlan,
     required String? mensajeActual,
