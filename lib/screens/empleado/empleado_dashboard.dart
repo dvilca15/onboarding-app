@@ -10,6 +10,7 @@ import 'widgets/step_card.dart';
 import 'widgets/onboarding_selector.dart';
 import 'widgets/bienvenida_modal.dart';
 import 'widgets/chat_fab_empleado.dart';
+import 'widgets/felicitacion_modal.dart';
 
 
 class EmpleadoDashboard extends StatefulWidget {
@@ -103,7 +104,7 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
     }
   }
 
-  Future<void> _cargarDetalle(int idOnboarding) async {
+Future<void> _cargarDetalle(int idOnboarding) async {
     setState(() {
       _onboardingSeleccionado = idOnboarding;
       _loadingDetalle = true;
@@ -114,7 +115,6 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
       final raw = await ApiService.verProgreso(idOnboarding);
       final detalle = OnboardingDetalle.fromJson(raw);
       for (final step in detalle.stepsConProgreso) {
-        // Saltar el step oculto de bienvenida
         if (step.titulo == '__BIENVENIDA__') continue;
         if (step.tasks.any((t) => !t.completada)) {
           _stepsExpandidos.add(step.idStep);
@@ -122,6 +122,17 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
         }
       }
       setState(() { _detalle = detalle; _loadingDetalle = false; });
+
+      // Mostrar felicitación si completó el 100%
+      if (detalle.progreso >= 100 && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          FelicitacionModal.show(
+            context: context,
+            nombreEmpleado: context.read<AuthProvider>().userName,
+            nombrePlan: detalle.nombrePlan,
+          );
+        });
+      }
     } catch (e) {
       setState(() {
         _loadingDetalle = false;
