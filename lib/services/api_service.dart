@@ -542,4 +542,23 @@ static Future<Map<String, dynamic>> subirArchivoTaskWeb({
   }
   return jsonDecode(body) as Map<String, dynamic>;
 }
+
+static Future<String> chatEmpleadoMensaje({
+  required String mensaje,
+  required List<Map<String, String>> historial,
+  required int idOnboarding,
+}) async {
+  final headers = await getHeaders();
+  final response = await http.post(
+    Uri.parse('$baseUrl/chat/empleado/mensaje'),
+    headers: headers,
+    body: jsonEncode({
+      'mensaje': mensaje,
+      'historial': historial,
+      'id_onboarding': idOnboarding,
+    }),
+  );
+  final data = _handleResponse(response);
+  return data['texto'] as String;
+}
 }

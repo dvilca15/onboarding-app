@@ -9,6 +9,8 @@ import '../../models/onboarding.dart';
 import 'widgets/step_card.dart';
 import 'widgets/onboarding_selector.dart';
 import 'widgets/bienvenida_modal.dart';
+import 'widgets/chat_fab_empleado.dart';
+
 
 class EmpleadoDashboard extends StatefulWidget {
   const EmpleadoDashboard({super.key});
@@ -181,7 +183,7 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
   }
 }
 
-  @override
+@override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
@@ -214,9 +216,22 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildBody(),
+      body: Stack(children: [
+        _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _buildBody(),
+
+        if (!_loading && _onboardingSeleccionado != null && _detalle != null)
+          Positioned(
+            bottom: 24,
+            right: 24,
+            child: ChatFabEmpleado(
+              idOnboarding: _onboardingSeleccionado!,
+              nombrePlan: _detalle!.nombrePlan,
+              nombreEmpleado: auth.userName,
+            ),
+          ),
+      ]),
     );
   }
 
