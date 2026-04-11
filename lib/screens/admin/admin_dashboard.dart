@@ -524,8 +524,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // ── Modales de tareas ─────────────────────────────────────
-
   void _showNuevoTask(int idStep,
       {int? idPlan, int cantidadTasks = 0, VoidCallback? onCreated}) {
     final tituloCtrl     = TextEditingController();
@@ -533,11 +531,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final bienvenidaCtrl = TextEditingController();
     final urlVideoCtrl   = TextEditingController();
     List<PreguntaFormulario> preguntasData = [];
-    String tipo      = 'CONFIRMACION';
-    bool obligatorio = true;
-    bool loading     = false;
-    final formKey    = GlobalKey<FormState>();
-    const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO', 'ENTREGA', 'BIENVENIDA'];
+    String tipo          = 'CONFIRMACION';
+    bool obligatorio     = true;
+    bool requiereEntrega = false;
+    bool loading         = false;
+    // Para DOCUMENTO: archivo seleccionado antes de crear
+    List<int>? archivoBytesSeleccionado;
+    String? archivoNombreSeleccionado;
+    bool archivoSubido = false;
+    final formKey = GlobalKey<FormState>();
+    const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO', 'BIENVENIDA'];
 
     showDialog(
       context: context,
@@ -559,8 +562,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   decoration: inputDec('Tipo', Icons.category_outlined),
                   items: tipos.map((t) =>
                       DropdownMenuItem(value: t, child: Text(t))).toList(),
-                  onChanged: (v) => set(() => tipo = v!),
+                  onChanged: (v) => set(() {
+                    tipo = v!;
+                    if (tipo != 'DOCUMENTO') {
+                      requiereEntrega = false;
+                      archivoBytesSeleccionado = null;
+                      archivoNombreSeleccionado = null;
+                      archivoSubido = false;
+                    }
+                  }),
                 ),
+
+                // ── BIENVENIDA ──────────────────────────────
                 if (tipo == 'BIENVENIDA') ...[
                   const SizedBox(height: 12),
                   _infoBanner(
@@ -570,6 +583,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   modalField('Escribe el mensaje de bienvenida...',
                       bienvenidaCtrl, Icons.waving_hand_outlined,
                       (v) => v!.isEmpty ? 'Requerido' : null, maxLines: 4),
+
+                // ── VIDEO ───────────────────────────────────
                 ] else if (tipo == 'VIDEO') ...[
                   const SizedBox(height: 12),
                   modalField('URL del video (YouTube, Drive, etc.)',
@@ -578,9 +593,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   const SizedBox(height: 12),
                   _ordenObligatorioRow(ordenCtrl, obligatorio,
                       cantidadTasks, set, (v) => obligatorio = v),
+
+                // ── FORMULARIO ──────────────────────────────
                 ] else if (tipo == 'FORMULARIO') ...[
                   const SizedBox(height: 12),
-                  // ── Paso 6: FormularioBuilder con validación ──
                   FormularioBuilder(
                     preguntasIniciales: const [],
                     onChanged: (lista) => preguntasData = lista,
@@ -588,12 +604,93 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   const SizedBox(height: 12),
                   _ordenObligatorioRow(ordenCtrl, obligatorio,
                       cantidadTasks, set, (v) => obligatorio = v),
-                ] else ...[
+
+                // ── DOCUMENTO ───────────────────────────────
+                ] else if (tipo == 'DOCUMENTO') ...[
                   const SizedBox(height: 12),
-                  if (tipo == 'DOCUMENTO')
+
+                  // Estado del archivo seleccionado
+                  if (archivoSubido)
+                    _infoBanner('Archivo cargado correctamente.',
+                        const Color(0xFFF0FDF4), const Color(0xFF16A34A))
+                  else if (archivoNombreSeleccionado != null)
                     _infoBanner(
-                        'Crea la tarea y luego sube el archivo desde "Editar tarea".',
+                        'Archivo listo: $archivoNombreSeleccionado',
+                        const Color(0xFFEFF6FF), const Color(0xFF3B82F6))
+                  else
+                    _infoBanner(
+                        'Opcional: sube el archivo ahora o hazlo después desde "Editar tarea".',
                         const Color(0xFFEFF6FF), const Color(0xFF3B82F6)),
+
+                  const SizedBox(height: 8),
+
+                  // Botón seleccionar archivo
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: loading ? null : () async {
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+                          withData: true,
+                        );
+                        if (result == null) return;
+                        final file = result.files.single;
+                        if (file.bytes == null) return;
+                        set(() {
+                          archivoBytesSeleccionado = file.bytes;
+                          archivoNombreSeleccionado = file.name;
+                        });
+                      },
+                      icon: const Icon(Icons.upload_file_outlined, size: 16),
+                      label: Text(
+                        archivoNombreSeleccionado != null
+                            ? 'Cambiar archivo'
+                            : 'Seleccionar PDF / imagen',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF3B82F6),
+                        side: const BorderSide(color: Color(0xFF3B82F6)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Toggle requiere entrega
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Row(children: [
+                      const Icon(Icons.upload_file_rounded,
+                          size: 16, color: Color(0xFF10B981)),
+                      const SizedBox(width: 8),
+                      const Expanded(child: Text(
+                        '¿El empleado debe subir el documento firmado?',
+                        style: TextStyle(fontSize: 13,
+                            color: Color(0xFF065F46)),
+                      )),
+                      Switch(
+                        value: requiereEntrega,
+                        onChanged: (v) => set(() => requiereEntrega = v),
+                        activeColor: const Color(0xFF10B981),
+                      ),
+                    ]),
+                  ),
+                  const SizedBox(height: 12),
+                  _ordenObligatorioRow(ordenCtrl, obligatorio,
+                      cantidadTasks, set, (v) => obligatorio = v),
+
+                // ── OTROS (CONFIRMACION) ────────────────────
+                ] else ...[
                   const SizedBox(height: 12),
                   _ordenObligatorioRow(ordenCtrl, obligatorio,
                       cantidadTasks, set, (v) => obligatorio = v),
@@ -602,16 +699,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ))),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFF6B7280)))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar',
+                  style: TextStyle(color: Color(0xFF6B7280))),
+            ),
             ElevatedButton(
               onPressed: loading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
-                // ── Paso 6: validar formulario antes de guardar ──
                 if (tipo == 'FORMULARIO') {
                   if (preguntasData.isEmpty) {
-                    showSnack(context, 'El formulario debe tener al menos 1 pregunta');
+                    showSnack(context,
+                        'El formulario debe tener al menos 1 pregunta');
                     return;
                   }
                   final errores = preguntasData
@@ -646,7 +745,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     } else if (tipo == 'VIDEO') {
                       urlContenido = urlVideoCtrl.text.trim();
                     }
-                    await ApiService.crearTask(
+
+                    // 1. Crear la tarea
+                    final taskData = await ApiService.crearTask(
                       idStep: idStep,
                       titulo: tituloCtrl.text.trim(),
                       tipo: tipo,
@@ -654,7 +755,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       orden: int.parse(ordenCtrl.text),
                       descripcion: descripcion,
                       urlContenido: urlContenido,
+                      requiereEntrega: requiereEntrega,
                     );
+
+                    // 2. Si es DOCUMENTO y hay archivo seleccionado, subirlo
+                    if (tipo == 'DOCUMENTO' &&
+                        archivoBytesSeleccionado != null &&
+                        archivoNombreSeleccionado != null) {
+                      final idTaskNuevo = taskData['id_task'] as int;
+                      await ApiService.subirArchivoTaskWeb(
+                        idStep: idStep,
+                        idTask: idTaskNuevo,
+                        bytes: archivoBytesSeleccionado!,
+                        nombreArchivo: archivoNombreSeleccionado!,
+                      );
+                      set(() => archivoSubido = true);
+                    }
+
                     if (mounted) {
                       Navigator.pop(ctx);
                       showSnack(context, 'Tarea creada', success: true);
@@ -663,7 +780,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   }
                 } catch (e) {
                   set(() => loading = false);
-                  showSnack(context, e.toString().replaceAll('Exception: ', ''));
+                  showSnack(context,
+                      e.toString().replaceAll('Exception: ', ''));
                 }
               },
               style: primaryBtnStyle(),
@@ -678,19 +796,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
+void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
     final tituloCtrl   = TextEditingController(text: task.titulo);
     final ordenCtrl    = TextEditingController(text: '${task.orden}');
     final urlVideoCtrl = TextEditingController(text: task.urlContenido ?? '');
     List<PreguntaFormulario> preguntasEditData = task.descripcion != null
         ? PreguntaFormulario.parsearDescripcion(task.descripcion!)
         : [];
-    bool archivoSubido = task.urlContenido != null;
-    String tipo        = task.tipo;
-    bool obligatorio   = task.obligatorio;
-    final formKey      = GlobalKey<FormState>();
-    bool loading       = false;
-    const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO', 'ENTREGA'];
+    // urlContenidoActual rastrea la URL real — se actualiza tras subir archivo
+    String? urlContenidoActual = task.urlContenido;
+    bool archivoSubido   = urlContenidoActual != null && urlContenidoActual.isNotEmpty;
+    String tipo          = task.tipo;
+    bool obligatorio     = task.obligatorio;
+    bool requiereEntrega = task.requiereEntrega;
+    final formKey        = GlobalKey<FormState>();
+    bool loading         = false;
+    const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO'];
 
     showDialog(
       context: context,
@@ -710,14 +831,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   decoration: inputDec('Tipo', Icons.category_outlined),
                   items: tipos.map((t) =>
                       DropdownMenuItem(value: t, child: Text(t))).toList(),
-                  onChanged: (v) => set(() => tipo = v!),
+                  onChanged: (v) => set(() {
+                    tipo = v!;
+                    if (tipo != 'DOCUMENTO') requiereEntrega = false;
+                  }),
                 ),
                 const SizedBox(height: 12),
+
+                // ── VIDEO ───────────────────────────────────
                 if (tipo == 'VIDEO') ...[
                   modalField('URL del video', urlVideoCtrl,
                       Icons.play_circle_outline_rounded, (_) => null),
                   const SizedBox(height: 12),
                 ],
+
+                // ── FORMULARIO ──────────────────────────────
                 if (tipo == 'FORMULARIO') ...[
                   FormularioBuilder(
                     preguntasIniciales: preguntasEditData,
@@ -725,11 +853,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   const SizedBox(height: 12),
                 ],
+
+                // ── DOCUMENTO ───────────────────────────────
                 if (tipo == 'DOCUMENTO') ...[
                   if (archivoSubido)
                     _infoBanner('Archivo cargado correctamente.',
                         const Color(0xFFF0FDF4), const Color(0xFF16A34A)),
                   const SizedBox(height: 8),
+
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
@@ -744,15 +875,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         if (file.bytes == null) return;
                         set(() => loading = true);
                         try {
-                          await ApiService.subirArchivoTaskWeb(
+                          final resp = await ApiService.subirArchivoTaskWeb(
                             idStep: idStep,
                             idTask: task.idTask,
                             bytes: file.bytes!,
                             nombreArchivo: file.name,
                           );
-                          set(() { loading = false; archivoSubido = true; });
+                          // ── Actualizar urlContenidoActual con la URL real
+                          //    que devuelve el backend
+                          set(() {
+                            loading = false;
+                            archivoSubido = true;
+                            urlContenidoActual =
+                                resp['url_contenido'] as String? ??
+                                '/static/uploads/${file.name}';
+                          });
                           if (mounted)
-                            showSnack(context, 'Archivo subido', success: true);
+                            showSnack(context, 'Archivo subido',
+                                success: true);
                         } catch (e) {
                           set(() => loading = false);
                           if (mounted)
@@ -761,14 +901,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         }
                       },
                       icon: loading
-                          ? const SizedBox(width: 14, height: 14,
+                          ? const SizedBox(
+                              width: 14, height: 14,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   color: Color(0xFF3B82F6)))
                           : const Icon(Icons.upload_file_outlined, size: 16),
-                      label: Text(archivoSubido
-                          ? 'Reemplazar archivo' : 'Subir PDF / imagen',
-                          style: const TextStyle(fontSize: 13)),
+                      label: Text(
+                        archivoSubido
+                            ? 'Reemplazar archivo'
+                            : 'Subir PDF / imagen',
+                        style: const TextStyle(fontSize: 13),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF3B82F6),
                         side: const BorderSide(color: Color(0xFF3B82F6)),
@@ -779,7 +923,36 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ),
                   ),
                   const SizedBox(height: 12),
+
+                  // Toggle requiere entrega
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Row(children: [
+                      const Icon(Icons.upload_file_rounded,
+                          size: 16, color: Color(0xFF10B981)),
+                      const SizedBox(width: 8),
+                      const Expanded(child: Text(
+                        '¿El empleado debe subir el documento firmado?',
+                        style: TextStyle(fontSize: 13,
+                            color: Color(0xFF065F46)),
+                      )),
+                      Switch(
+                        value: requiereEntrega,
+                        onChanged: (v) => set(() => requiereEntrega = v),
+                        activeColor: const Color(0xFF10B981),
+                      ),
+                    ]),
+                  ),
+                  const SizedBox(height: 12),
                 ],
+
+                // Orden + Obligatoria
                 Row(children: [
                   Expanded(child: modalField('Orden', ordenCtrl,
                       Icons.format_list_numbered, (v) {
@@ -789,9 +962,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   }, keyboardType: TextInputType.number)),
                   const SizedBox(width: 12),
                   Row(children: [
-                    Switch(value: obligatorio,
-                        onChanged: (v) => set(() => obligatorio = v),
-                        activeColor: const Color(0xFF1565C0)),
+                    Switch(
+                      value: obligatorio,
+                      onChanged: (v) => set(() => obligatorio = v),
+                      activeColor: const Color(0xFF1565C0),
+                    ),
                     const Text('Obligatoria',
                         style: TextStyle(fontSize: 13)),
                   ]),
@@ -800,9 +975,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ))),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFF6B7280)))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar',
+                  style: TextStyle(color: Color(0xFF6B7280))),
+            ),
             ElevatedButton(
               onPressed: loading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -810,13 +987,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 try {
                   String? descripcion;
                   String? urlContenido;
+
                   if (tipo == 'FORMULARIO' && preguntasEditData.isNotEmpty) {
                     descripcion =
                         PreguntaFormulario.serializarLista(preguntasEditData);
                   }
-                  if (tipo == 'VIDEO' && urlVideoCtrl.text.trim().isNotEmpty) {
+                  if (tipo == 'VIDEO' &&
+                      urlVideoCtrl.text.trim().isNotEmpty) {
                     urlContenido = urlVideoCtrl.text.trim();
                   }
+                  // ── DOCUMENTO: usar urlContenidoActual (ya actualizado
+                  //    tras subir el archivo, no el objeto task original)
+                  if (tipo == 'DOCUMENTO') {
+                    urlContenido = urlContenidoActual;
+                  }
+
                   await ApiService.editarTask(
                     idStep: idStep,
                     idTask: task.idTask,
@@ -826,6 +1011,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     orden: int.parse(ordenCtrl.text),
                     descripcion: descripcion,
                     urlContenido: urlContenido,
+                    requiereEntrega: requiereEntrega,
                   );
                   if (mounted) {
                     Navigator.pop(ctx);
@@ -834,11 +1020,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   }
                 } catch (e) {
                   set(() => loading = false);
-                  showSnack(context, e.toString().replaceAll('Exception: ', ''));
+                  showSnack(context,
+                      e.toString().replaceAll('Exception: ', ''));
                 }
               },
               style: primaryBtnStyle(),
-              child: loading ? btnSpinner() : const Text('Guardar cambios'),
+              child: loading
+                  ? btnSpinner()
+                  : const Text('Guardar cambios'),
             ),
           ],
         ),

@@ -1,12 +1,5 @@
 import 'dart:math';
 
-// ─────────────────────────────────────────────────────────────
-// Mejora A — Cambios en lib/models/onboarding.dart
-//
-// 1. Nueva clase RespuestaFormulario
-// 2. TaskProgressDetalle agrega campo respuestas
-// ─────────────────────────────────────────────────────────────
-
 class Onboarding {
   final int idEmployeeOnboarding;
   final int idPlan;
@@ -60,8 +53,6 @@ class Onboarding {
 }
 
 
-// ── Mejora A: modelo para respuestas de formulario ───────────
-
 class RespuestaFormulario {
   final int idRespuesta;
   final String pregunta;
@@ -77,10 +68,10 @@ class RespuestaFormulario {
 
   factory RespuestaFormulario.fromJson(Map<String, dynamic> json) =>
       RespuestaFormulario(
-        idRespuesta:    json['id_respuesta'] as int,
-        pregunta:       json['pregunta'] as String,
-        respuesta:      json['respuesta'] as String,
-        fechaCreacion:  DateTime.parse(json['fecha_creacion'] as String),
+        idRespuesta:   json['id_respuesta'] as int,
+        pregunta:      json['pregunta'] as String,
+        respuesta:     json['respuesta'] as String,
+        fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
       );
 }
 
@@ -97,8 +88,10 @@ class TaskProgressDetalle {
   final int orden;
   final String? urlContenido;
   final String? descripcion;
-  // ── Mejora A: respuestas del formulario ──────────────────
   final List<RespuestaFormulario> respuestas;
+  // ── entrega_v2 ────────────────────────────────────────────
+  final bool requiereEntrega;
+  final String? urlEntrega;
 
   const TaskProgressDetalle({
     required this.idTaskProgress,
@@ -113,6 +106,8 @@ class TaskProgressDetalle {
     this.urlContenido,
     this.descripcion,
     this.respuestas = const [],
+    this.requiereEntrega = false,
+    this.urlEntrega,
   });
 
   factory TaskProgressDetalle.fromJson(Map<String, dynamic> json) =>
@@ -130,10 +125,11 @@ class TaskProgressDetalle {
         orden:        json['orden'] as int,
         urlContenido: json['url_contenido'] as String?,
         descripcion:  json['descripcion'] as String?,
-        // ── Mejora A ─────────────────────────────────────
         respuestas: (json['respuestas'] as List<dynamic>? ?? [])
             .map((r) => RespuestaFormulario.fromJson(r as Map<String, dynamic>))
             .toList(),
+        requiereEntrega: json['requiere_entrega'] as bool? ?? false,
+        urlEntrega:      json['url_entrega'] as String?,
       );
 
   bool get completada => estado == 'COMPLETADO';

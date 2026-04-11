@@ -185,8 +185,9 @@ class ApiService {
     String tipo = 'CONFIRMACION',
     bool obligatorio = true,
     int orden = 1,
-    String? descripcion,      // ← nuevo
-    String? urlContenido,     // ← nuevo
+    String? descripcion,
+    String? urlContenido,
+    bool requiereEntrega = false,
   }) async {
     final headers = await getHeaders();
     final response = await http.post(
@@ -199,6 +200,7 @@ class ApiService {
         'orden': orden,
         if (descripcion != null) 'descripcion': descripcion,
         if (urlContenido != null) 'url_contenido': urlContenido,
+        'requiere_entrega': requiereEntrega,
       }),
     );
     return _handleResponse(response);
@@ -484,6 +486,7 @@ static Future<Map<String, dynamic>> editarTask({
   int? orden,
   String? descripcion,
   String? urlContenido,
+  bool? requiereEntrega,
 }) async {
   final headers = await getHeaders();
   final body = <String, dynamic>{};
@@ -491,9 +494,10 @@ static Future<Map<String, dynamic>> editarTask({
   if (tipo != null) body['tipo'] = tipo;
   if (obligatorio != null) body['obligatorio'] = obligatorio;
   if (orden != null) body['orden'] = orden;
-  // Siempre enviar aunque sea null para limpiar el campo
-  body['descripcion'] = descripcion;
-  body['url_contenido'] = urlContenido;
+
+  if (descripcion != null) body['descripcion'] = descripcion;
+  if (urlContenido != null) body['url_contenido'] = urlContenido;
+  if (requiereEntrega != null) body['requiere_entrega'] = requiereEntrega;
   final response = await http.put(
     Uri.parse('$baseUrl/steps/$idStep/tasks/$idTask'),
     headers: headers,
@@ -591,7 +595,7 @@ static Future<Map<String, dynamic>> cambiarPassword({
     return _handleResponse(response);
   }
 
-    static Future<Map<String, dynamic>> subirEntregaEmpleado({
+  static Future<Map<String, dynamic>> subirEntregaEmpleado({
     required int idOnboarding,
     required int idTask,
     required List<int> bytes,
@@ -600,8 +604,7 @@ static Future<Map<String, dynamic>> cambiarPassword({
     final token = await getToken();
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse(
-          '$baseUrl/onboarding/$idOnboarding/tasks/$idTask/subir-entrega'),
+      Uri.parse('$baseUrl/onboarding/$idOnboarding/tasks/$idTask/subir-entrega'),
     );
     request.headers['Authorization'] = 'Bearer $token';
     request.files.add(http.MultipartFile.fromBytes(
