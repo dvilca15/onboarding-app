@@ -4,53 +4,51 @@ import 'dart:convert';
 import '../services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  bool _isLoading         = false;
+  bool _isLoading       = false;
   String? _error;
   Map<String, dynamic>? _userData;
-  bool _isAuthenticated   = false;
+  bool _isAuthenticated = false;
 
-  bool get isLoading       => _isLoading;
-  String? get error        => _error;
+  bool get isLoading        => _isLoading;
+  String? get error         => _error;
   Map<String, dynamic>? get userData => _userData;
-  bool get isAuthenticated => _isAuthenticated;
-  bool get isAdmin         => _userData?['roles']?.contains('ADMIN_EMPRESA') ?? false;
-  String get userName      => _userData?['nombre'] ?? '';
-  int get userId           => _userData?['id_user'] ?? 0;
-  int get empresaId        => _userData?['empresa_id'] ?? 0;
+  bool get isAuthenticated  => _isAuthenticated;
+  bool get isAdmin          => _userData?['roles']?.contains('ADMIN_EMPRESA') ?? false;
+  String get userName       => _userData?['nombre'] ?? '';
+  int get userId            => _userData?['id_user'] ?? 0;
+  int get empresaId         => _userData?['empresa_id'] ?? 0;
 
-  /// Lista de roles del usuario autenticado
+  // ── Paso 2: indica si el empleado ya cambió su contraseña inicial ──
+  bool get passwordChanged  => _userData?['password_changed'] ?? true;
+
   List<String> get userRoles =>
       (_userData?['roles'] as List<dynamic>? ?? [])
           .map((r) => r.toString())
           .toList();
 
-  /// Verifica si hay sesión activa al iniciar la app
-  Future<bool> checkAuth() async {
-    final token = await ApiService.getToken();
-    if (token == null) return false;
+  // ── Verificación de sesión al iniciar la app ──────────────
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString('user_data');
-      if (userJson != null) {
-        _userData = jsonDecode(userJson);
-        _isAuthenticated = true;
-        notifyListeners();
-        return true;
-      }
-      final data = await ApiService.getMe();
-      _userData = data;
-      _isAuthenticated = true;
-      await prefs.setString('user_data', jsonEncode(data));
-      notifyListeners();
-      return true;
-    } catch (e) {
-      await logout();
-      return false;
-    }
+Future<bool> checkAuth() async {
+  final token = await ApiService.getToken();
+  if (token == null) return false;
+
+  try {
+    final data = await ApiService.getMe();
+    _userData = data;
+    _isAuthenticated = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_data', jsonEncode(data));
+    notifyListeners();
+    return true;
+  } catch (_) {
+    await logout();
+    return false;
   }
+}
 
-  /// Login — retorna null si fue exitoso, o el mensaje de error si falló
+  // ── Login ─────────────────────────────────────────────────
+
+  /// Retorna null si fue exitoso, o el mensaje de error si falló.
   Future<String?> login(String email, String password) async {
     _isLoading = true;
     _error = null;
@@ -74,16 +72,29 @@ class AuthProvider extends ChangeNotifier {
       _error = e.toString().replaceAll('Exception: ', '');
       _isLoading = false;
       notifyListeners();
-      return _error; // String = error
+      return _error;
     }
   }
 
-  /// Logout
+  // ── Paso 2: actualiza password_changed en memoria y SharedPreferences ──
+
+  /// Llamado desde CambiarPasswordScreen tras un cambio exitoso.
+  /// Actualiza el estado local sin necesidad de hacer logout/login.
+  Future<void> marcarPasswordCambiado() async {
+    if (_userData == null) return;
+    _userData!['password_changed'] = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_data', jsonEncode(_userData));
+    notifyListeners();
+  }
+
+  // ── Logout ────────────────────────────────────────────────
+
   Future<void> logout() async {
     await ApiService.clearToken();
-    _userData        = null;
+    _userData       = null;
     _isAuthenticated = false;
-    _error           = null;
+    _error          = null;
     notifyListeners();
   }
 

@@ -1,5 +1,12 @@
 import 'dart:math';
 
+// ─────────────────────────────────────────────────────────────
+// Mejora A — Cambios en lib/models/onboarding.dart
+//
+// 1. Nueva clase RespuestaFormulario
+// 2. TaskProgressDetalle agrega campo respuestas
+// ─────────────────────────────────────────────────────────────
+
 class Onboarding {
   final int idEmployeeOnboarding;
   final int idPlan;
@@ -27,9 +34,9 @@ class Onboarding {
 
   factory Onboarding.fromJson(Map<String, dynamic> json) => Onboarding(
         idEmployeeOnboarding: json['id_employee_onboarding'] as int,
-        idPlan: json['id_plan'] as int,
-        idUser: json['id_user'] as int,
-        estado: json['estado'] as String,
+        idPlan:   json['id_plan'] as int,
+        idUser:   json['id_user'] as int,
+        estado:   json['estado'] as String,
         progreso: double.tryParse(json['progreso'].toString()) ?? 0.0,
         fechaInicio: json['fecha_inicio'] != null
             ? DateTime.tryParse(json['fecha_inicio'] as String)
@@ -39,7 +46,7 @@ class Onboarding {
             : null,
         fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
         nombreEmpleado: json['nombre_empleado'] as String? ?? '',
-        nombrePlan: json['nombre_plan'] as String? ?? '',
+        nombrePlan:     json['nombre_plan'] as String? ?? '',
       );
 
   bool get completado => estado == 'COMPLETADO';
@@ -53,6 +60,31 @@ class Onboarding {
 }
 
 
+// ── Mejora A: modelo para respuestas de formulario ───────────
+
+class RespuestaFormulario {
+  final int idRespuesta;
+  final String pregunta;
+  final String respuesta;
+  final DateTime fechaCreacion;
+
+  const RespuestaFormulario({
+    required this.idRespuesta,
+    required this.pregunta,
+    required this.respuesta,
+    required this.fechaCreacion,
+  });
+
+  factory RespuestaFormulario.fromJson(Map<String, dynamic> json) =>
+      RespuestaFormulario(
+        idRespuesta:    json['id_respuesta'] as int,
+        pregunta:       json['pregunta'] as String,
+        respuesta:      json['respuesta'] as String,
+        fechaCreacion:  DateTime.parse(json['fecha_creacion'] as String),
+      );
+}
+
+
 class TaskProgressDetalle {
   final int idTaskProgress;
   final int idTask;
@@ -63,8 +95,10 @@ class TaskProgressDetalle {
   final String tipo;
   final bool obligatorio;
   final int orden;
-  final String? urlContenido;   // URL del archivo o video
-  final String? descripcion;   // Instrucciones o preguntas del formulario
+  final String? urlContenido;
+  final String? descripcion;
+  // ── Mejora A: respuestas del formulario ──────────────────
+  final List<RespuestaFormulario> respuestas;
 
   const TaskProgressDetalle({
     required this.idTaskProgress,
@@ -78,6 +112,7 @@ class TaskProgressDetalle {
     required this.orden,
     this.urlContenido,
     this.descripcion,
+    this.respuestas = const [],
   });
 
   factory TaskProgressDetalle.fromJson(Map<String, dynamic> json) =>
@@ -95,6 +130,10 @@ class TaskProgressDetalle {
         orden:        json['orden'] as int,
         urlContenido: json['url_contenido'] as String?,
         descripcion:  json['descripcion'] as String?,
+        // ── Mejora A ─────────────────────────────────────
+        respuestas: (json['respuestas'] as List<dynamic>? ?? [])
+            .map((r) => RespuestaFormulario.fromJson(r as Map<String, dynamic>))
+            .toList(),
       );
 
   bool get completada => estado == 'COMPLETADO';

@@ -22,6 +22,11 @@ import 'modals/eliminar_plan_modal.dart';
 
 import 'package:file_picker/file_picker.dart';
 
+// ─────────────────────────────────────────────────────────────
+// Breakpoint mobile/web para el admin (igual que el shell)
+// ─────────────────────────────────────────────────────────────
+const double _kAdminBreakpoint = 600;
+
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -31,8 +36,8 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
-  List<Usuario>   _usuarios    = [];
-  List<Plan>      _planes      = [];
+  List<Usuario>    _usuarios    = [];
+  List<Plan>       _planes      = [];
   List<Onboarding> _onboardings = [];
   bool   _loading   = true;
   String? _loadError;
@@ -64,11 +69,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
         _usuarios    = (results[0] as List).map((e) => Usuario.fromJson(e)).toList();
         _planes      = (results[1] as List).map((e) => Plan.fromJson(e)).toList();
         _onboardings = (results[2] as List).map((e) => Onboarding.fromJson(e)).toList();
-        _loading = false;
+        _loading     = false;
       });
     } catch (e) {
       setState(() {
-        _loading = false;
+        _loading   = false;
         _loadError = e.toString().replaceAll('Exception: ', '');
       });
     }
@@ -103,7 +108,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 return null;
               }),
               const SizedBox(height: 12),
-              modalField('Nueva contraseña (vacío = sin cambio)', passCtrl,
+              modalField(
+                  'Nueva contraseña (vacío = sin cambio)', passCtrl,
                   Icons.lock_outline,
                   (v) => v!.isNotEmpty && v.length < 6 ? 'Mínimo 6' : null,
                   obscure: true),
@@ -240,11 +246,122 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _confirmarEliminarPlan(Plan plan) {
-    EliminarPlanModal.show(context,
-        idPlan: plan.idPlan,
-        nombrePlan: plan.nombre,
-        onEliminado: _loadData);
+  // ── Paso 6: confirmar eliminar plan con conteo de activos ─
+
+  void _confirmarEliminarPlan(Plan plan) async {
+    try {
+      final data = await ApiService.tieneEmpleadosActivos(plan.idPlan);
+      final count = data['count'] as int;
+      final tieneActivos = data['tiene_activos'] as bool;
+
+      if (!mounted) return;
+
+      if (tieneActivos) {
+        // Mostrar advertencia con conteo
+        _confirmarEliminarConAdvertencia(plan, count);
+      } else {
+        // Sin empleados activos — confirmación simple
+        EliminarPlanModal.show(context,
+            idPlan: plan.idPlan,
+            nombrePlan: plan.nombre,
+            onEliminado: _loadData);
+      }
+    } catch (_) {
+      // Si falla el check, usar confirmación simple
+      EliminarPlanModal.show(context,
+          idPlan: plan.idPlan,
+          nombrePlan: plan.nombre,
+          onEliminado: _loadData);
+    }
+  }
+
+  void _confirmarEliminarConAdvertencia(Plan plan, int count) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded,
+                color: Color(0xFFF59E0B), size: 22),
+            SizedBox(width: 8),
+            Text('Eliminar plan',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFDC2626))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Advertencia en banner
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.people_rounded,
+                      color: Color(0xFFD97706), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '$count empleado${count != 1 ? "s" : ""} con onboarding activo en este plan.',
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF92400E),
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '¿Eliminar "${plan.nombre}"?\n\nSe eliminarán todos los onboardings activos y el progreso de esos empleados. Esta acción es irreversible.',
+              style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF374151),
+                  height: 1.5),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar',
+                style: TextStyle(color: Color(0xFF6B7280))),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ApiService.eliminarPlan(plan.idPlan);
+                _loadData();
+                showSnack(context, 'Plan eliminado', success: true);
+              } catch (e) {
+                showSnack(context,
+                    e.toString().replaceAll('Exception: ', ''));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Sí, eliminar de todas formas'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ── Modales de etapas ─────────────────────────────────────
@@ -420,7 +537,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     bool obligatorio = true;
     bool loading     = false;
     final formKey    = GlobalKey<FormState>();
-    const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO', 'BIENVENIDA'];
+    const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO', 'ENTREGA', 'BIENVENIDA'];
 
     showDialog(
       context: context,
@@ -446,7 +563,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 if (tipo == 'BIENVENIDA') ...[
                   const SizedBox(height: 12),
-                  _infoBanner('El empleado verá este mensaje al entrar por primera vez.',
+                  _infoBanner(
+                      'El empleado verá este mensaje al entrar por primera vez.',
                       const Color(0xFFEDE9FE), const Color(0xFF7C3AED)),
                   const SizedBox(height: 12),
                   modalField('Escribe el mensaje de bienvenida...',
@@ -462,6 +580,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       cantidadTasks, set, (v) => obligatorio = v),
                 ] else if (tipo == 'FORMULARIO') ...[
                   const SizedBox(height: 12),
+                  // ── Paso 6: FormularioBuilder con validación ──
                   FormularioBuilder(
                     preguntasIniciales: const [],
                     onChanged: (lista) => preguntasData = lista,
@@ -471,12 +590,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       cantidadTasks, set, (v) => obligatorio = v),
                 ] else ...[
                   const SizedBox(height: 12),
-                  if (tipo == 'DOCUMENTO') ...[
+                  if (tipo == 'DOCUMENTO')
                     _infoBanner(
                         'Crea la tarea y luego sube el archivo desde "Editar tarea".',
                         const Color(0xFFEFF6FF), const Color(0xFF3B82F6)),
-                    const SizedBox(height: 12),
-                  ],
+                  const SizedBox(height: 12),
                   _ordenObligatorioRow(ordenCtrl, obligatorio,
                       cantidadTasks, set, (v) => obligatorio = v),
                 ],
@@ -490,6 +608,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ElevatedButton(
               onPressed: loading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
+                // ── Paso 6: validar formulario antes de guardar ──
+                if (tipo == 'FORMULARIO') {
+                  if (preguntasData.isEmpty) {
+                    showSnack(context, 'El formulario debe tener al menos 1 pregunta');
+                    return;
+                  }
+                  final errores = preguntasData
+                      .map((p) => p.validar())
+                      .where((e) => e != null)
+                      .toList();
+                  if (errores.isNotEmpty) {
+                    showSnack(context, 'Revisa las preguntas del formulario');
+                    return;
+                  }
+                }
                 set(() => loading = true);
                 try {
                   if (tipo == 'BIENVENIDA') {
@@ -536,7 +669,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               style: primaryBtnStyle(),
               child: loading
                   ? btnSpinner()
-                  : Text(tipo == 'BIENVENIDA' ? 'Guardar bienvenida' : 'Crear tarea'),
+                  : Text(tipo == 'BIENVENIDA'
+                      ? 'Guardar bienvenida' : 'Crear tarea'),
             ),
           ],
         ),
@@ -545,18 +679,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
-    final tituloCtrl    = TextEditingController(text: task.titulo);
-    final ordenCtrl     = TextEditingController(text: '${task.orden}');
-    final urlVideoCtrl  = TextEditingController(text: task.urlContenido ?? '');
+    final tituloCtrl   = TextEditingController(text: task.titulo);
+    final ordenCtrl    = TextEditingController(text: '${task.orden}');
+    final urlVideoCtrl = TextEditingController(text: task.urlContenido ?? '');
     List<PreguntaFormulario> preguntasEditData = task.descripcion != null
         ? PreguntaFormulario.parsearDescripcion(task.descripcion!)
         : [];
-    bool archivoSubido  = task.urlContenido != null;
-    String tipo         = task.tipo;
-    bool obligatorio    = task.obligatorio;
-    final formKey       = GlobalKey<FormState>();
-    bool loading        = false;
-    const tipos         = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO'];
+    bool archivoSubido = task.urlContenido != null;
+    String tipo        = task.tipo;
+    bool obligatorio   = task.obligatorio;
+    final formKey      = GlobalKey<FormState>();
+    bool loading       = false;
+    const tipos = ['CONFIRMACION', 'DOCUMENTO', 'VIDEO', 'FORMULARIO', 'ENTREGA'];
 
     showDialog(
       context: context,
@@ -628,8 +762,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       },
                       icon: loading
                           ? const SizedBox(width: 14, height: 14,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Color(0xFF3B82F6)))
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF3B82F6)))
                           : const Icon(Icons.upload_file_outlined, size: 16),
                       label: Text(archivoSubido
                           ? 'Reemplazar archivo' : 'Subir PDF / imagen',
@@ -773,6 +908,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   // ── Modal detalle del plan ────────────────────────────────
+  // (igual que antes — sin cambios)
 
   void _showPlanDetalle(Plan plan) {
     showDialog(
@@ -792,17 +928,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
           return AlertDialog(
             title: Text(detalle.nombre,
-                style: const TextStyle(fontSize: 18,
-                    fontWeight: FontWeight.w600)),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             content: SizedBox(width: 500,
                 child: SingleChildScrollView(child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildBienvenidaSection(
-                        ctx, plan, mensajeActual),
+                    _buildBienvenidaSection(ctx, plan, mensajeActual),
                     ...stepsVisibles.asMap().entries.map((entry) =>
-                        _buildStepCard(ctx, plan, entry.value,
-                            entry.key + 1)),
+                        _buildStepCard(ctx, plan, entry.value, entry.key + 1)),
                   ],
                 ))),
             actions: [
@@ -828,8 +961,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.waving_hand_rounded, size: 16,
-              color: Color(0xFF7C3AED)),
+          const Icon(Icons.waving_hand_rounded,
+              size: 16, color: Color(0xFF7C3AED)),
           const SizedBox(width: 6),
           const Expanded(child: Text('Mensaje de bienvenida',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
@@ -941,8 +1074,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               if (!mounted) return;
               _confirmarEliminar(
                 titulo: 'Eliminar etapa',
-                mensaje:
-                '¿Eliminar "${s.titulo}"?\nSe eliminarán todas sus tareas.',
+                mensaje: '¿Eliminar "${s.titulo}"?\nSe eliminarán todas sus tareas.',
                 onConfirm: () async {
                   try {
                     await ApiService.eliminarStep(
@@ -980,8 +1112,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ...s.tasks.map((t) => Padding(
             padding: const EdgeInsets.only(left: 16, bottom: 6),
             child: Row(children: [
-              const Icon(Icons.radio_button_unchecked, size: 14,
-                  color: Color(0xFF9CA3AF)),
+              const Icon(Icons.radio_button_unchecked,
+                  size: 14, color: Color(0xFF9CA3AF)),
               const SizedBox(width: 6),
               Expanded(child: Text(t.titulo,
                   style: const TextStyle(fontSize: 13))),
@@ -1001,8 +1133,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   Navigator.pop(ctx);
                   await Future.delayed(const Duration(milliseconds: 100));
                   if (!mounted) return;
-                  _showEditarTask(
-                      t, s.idStep, () => _showPlanDetalle(plan));
+                  _showEditarTask(t, s.idStep, () => _showPlanDetalle(plan));
                 },
                 child: const Padding(padding: EdgeInsets.all(4),
                     child: Icon(Icons.edit_outlined, size: 13,
@@ -1122,38 +1253,71 @@ class _AdminDashboardState extends State<AdminDashboard> {
     ]);
   }
 
-  // ── Build ─────────────────────────────────────────────────
+  // ── Build principal ───────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    // ── Paso 6: LayoutBuilder para responsive ─────────────
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= _kAdminBreakpoint;
+        return isWide
+            ? _buildWideLayout(auth)
+            : _buildMobileLayout(auth);
+      },
+    );
+  }
+
+  // ── Web/Tablet: sidebar fijo ──────────────────────────────
+
+  Widget _buildWideLayout(AuthProvider auth) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: Stack(children: [
         Row(children: [
           _buildSidebar(auth),
           Expanded(child: Column(children: [
-            _buildTopBar(),
+            _buildTopBar(showMenuIcon: false),
             Expanded(child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _buildContent()),
           ])),
         ]),
-        const Positioned(
-          bottom: 24, right: 24,
-          child: ChatFab(),
-        ),
+        const Positioned(bottom: 24, right: 24, child: ChatFab()),
       ]),
     );
   }
 
-  Widget _buildSidebar(AuthProvider auth) {
+  // ── Paso 6: Mobile — Drawer con hamburguesa ───────────────
+
+  Widget _buildMobileLayout(AuthProvider auth) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      drawer: Drawer(
+        child: _buildSidebar(auth, isDrawer: true),
+      ),
+      body: Stack(children: [
+        Column(children: [
+          _buildTopBar(showMenuIcon: true),
+          Expanded(child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _buildContent()),
+        ]),
+        const Positioned(bottom: 24, right: 24, child: ChatFab()),
+      ]),
+    );
+  }
+
+  // ── Sidebar (compartido entre wide y drawer) ──────────────
+
+  Widget _buildSidebar(AuthProvider auth, {bool isDrawer = false}) {
     return Container(
-      width: 220,
+      width: isDrawer ? double.infinity : 220,
       color: const Color(0xFF1565C0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 36, 20, 12),
+          padding: EdgeInsets.fromLTRB(20, isDrawer ? 56 : 36, 20, 12),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Container(
@@ -1171,8 +1335,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ]),
             const SizedBox(height: 6),
             Text(auth.userName,
-                style: TextStyle(color: Colors.white.withOpacity(0.7),
-                    fontSize: 12),
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.7), fontSize: 12),
                 overflow: TextOverflow.ellipsis),
           ]),
         ),
@@ -1181,23 +1345,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ..._navItems.asMap().entries.map((e) {
           final selected = _selectedIndex == e.key;
           return InkWell(
-            onTap: () => setState(() => _selectedIndex = e.key),
+            onTap: () {
+              setState(() => _selectedIndex = e.key);
+              if (isDrawer) Navigator.pop(context);
+            },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                   color: selected
                       ? Colors.white.withOpacity(0.15) : Colors.transparent,
                   borderRadius: BorderRadius.circular(8)),
               child: Row(children: [
                 Icon(e.value.icon,
-                    color: selected ? Colors.white
-                        : Colors.white.withOpacity(0.6),
+                    color: selected
+                        ? Colors.white : Colors.white.withOpacity(0.6),
                     size: 20),
                 const SizedBox(width: 10),
                 Text(e.value.label, style: TextStyle(
-                    color: selected ? Colors.white
-                        : Colors.white.withOpacity(0.6),
+                    color: selected
+                        ? Colors.white : Colors.white.withOpacity(0.6),
                     fontSize: 14,
                     fontWeight: selected
                         ? FontWeight.w600 : FontWeight.normal)),
@@ -1219,8 +1387,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   color: Colors.white.withOpacity(0.6), size: 20),
               const SizedBox(width: 10),
               Text('Cerrar sesión',
-                  style: TextStyle(color: Colors.white.withOpacity(0.6),
-                      fontSize: 14)),
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.6), fontSize: 14)),
             ]),
           ),
         ),
@@ -1229,7 +1397,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget _buildTopBar() {
+  // ── Top bar ───────────────────────────────────────────────
+
+  Widget _buildTopBar({required bool showMenuIcon}) {
     const titles = [
       'Dashboard', 'Empleados', 'Planes de Onboarding', 'Onboardings Activos'
     ];
@@ -1240,16 +1410,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     return Container(
       height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: const BoxDecoration(
+          color: Colors.white,
           border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
       child: Row(children: [
+        // ── Paso 6: icono hamburguesa en mobile ───────────
+        if (showMenuIcon)
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded,
+                  color: Color(0xFF1565C0)),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              tooltip: 'Menú',
+            ),
+          ),
         Text(titles[_selectedIndex],
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600,
+            style: const TextStyle(fontSize: 18,
+                fontWeight: FontWeight.w600,
                 color: Color(0xFF1A1A2E))),
         const Spacer(),
         IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF6B7280)),
+            icon: const Icon(Icons.refresh_rounded,
+                color: Color(0xFF6B7280)),
             onPressed: _loadData,
             tooltip: 'Actualizar'),
         if (actions[_selectedIndex] != null) ...[
@@ -1276,7 +1459,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Text(_loadError!,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+            style: const TextStyle(
+                fontSize: 13, color: Color(0xFF6B7280))),
         const SizedBox(height: 20),
         ElevatedButton.icon(
             onPressed: _loadData,
@@ -1300,7 +1484,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           onEditar: _showEditarPlan,
           onEliminar: _confirmarEliminarPlan,
           onAgregarEtapa: _showNuevoStep),
-      3 => OnboardingsTab(onboardings: _onboardings),
+      3 => OnboardingsTab(onboardings: _onboardings, onRefresh: _loadData),
       _ => DashboardTab(
           usuarios: _usuarios,
           planes: _planes,
@@ -1308,3 +1492,4 @@ class _AdminDashboardState extends State<AdminDashboard> {
     };
   }
 }
+

@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:ui_web' as ui;
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../models/onboarding.dart';
+import '../../../services/api_service.dart';
 
 // ── Modelo de pregunta ────────────────────────────────────────
 
@@ -33,7 +35,6 @@ class _Pregunta {
             .map((e) => _Pregunta.fromJson(e as Map<String, dynamic>))
             .toList();
       }
-      // Formato viejo: lista de strings
       return lista
           .map((e) => _Pregunta(tipo: 'abierta', pregunta: e.toString()))
           .toList();
@@ -48,18 +49,14 @@ class _Pregunta {
 String? _convertirEmbedUrl(String url) {
   final uri = Uri.tryParse(url);
   if (uri == null) return null;
-
-  // YouTube: youtube.com/watch?v=ID
   if (uri.host.contains('youtube.com') &&
       uri.queryParameters.containsKey('v')) {
     final id = uri.queryParameters['v'];
     return 'https://www.youtube.com/embed/$id?autoplay=0';
   }
-  // YouTube: youtu.be/ID
   if (uri.host.contains('youtu.be') && uri.pathSegments.isNotEmpty) {
     return 'https://www.youtube.com/embed/${uri.pathSegments.first}?autoplay=0';
   }
-  // Google Drive: drive.google.com/file/d/ID/view
   if (uri.host.contains('drive.google.com') && url.contains('/file/d/')) {
     final match = RegExp(r'/file/d/([^/]+)').firstMatch(url);
     if (match != null) {
@@ -125,8 +122,8 @@ class TaskRow extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
               child: Row(children: [
                 Expanded(child: Text(task.titulo,
-                    style: const TextStyle(fontSize: 16,
-                        fontWeight: FontWeight.w600))),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600))),
                 IconButton(
                   onPressed: () => Navigator.pop(ctx),
                   icon: const Icon(Icons.close_rounded, size: 20),
@@ -134,8 +131,6 @@ class TaskRow extends StatelessWidget {
               ]),
             ),
             const Divider(height: 1),
-
-            // Video embebido o botón abrir
             if (embedUrl != null)
               _VideoEmbed(embedUrl: embedUrl)
             else
@@ -146,12 +141,10 @@ class TaskRow extends StatelessWidget {
                       size: 48, color: Color(0xFFF97316)),
                   const SizedBox(height: 12),
                   const Text('Este video no se puede mostrar aquí.',
-                      style: TextStyle(fontSize: 14,
-                          fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 6),
                   const Text('Se abrirá en una nueva pestaña.',
-                      style: TextStyle(fontSize: 13,
-                          color: Color(0xFF6B7280))),
+                      style: TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () => _abrirContenido(context),
@@ -167,7 +160,6 @@ class TaskRow extends StatelessWidget {
                   ),
                 ]),
               ),
-
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -226,13 +218,28 @@ class TaskRow extends StatelessWidget {
     );
   }
 
+  // ── Mejora B: modal de entrega ────────────────────────────
+
+  void _mostrarEntrega(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _EntregaDialog(
+        task: task,
+        idOnboarding: idOnboarding,
+        onEntregado: () {
+          Navigator.pop(ctx);
+          onCompletar();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          // Checkbox
           GestureDetector(
             onTap: task.completada ? null : () => _onTapTask(context),
             child: AnimatedContainer(
@@ -249,20 +256,20 @@ class TaskRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: task.completada
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
+                  ? const Icon(Icons.check_rounded,
+                      color: Colors.white, size: 14)
                   : null,
             ),
           ),
           const SizedBox(width: 10),
-
-          // Título + badges
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(task.titulo,
                   style: TextStyle(
                     fontSize: 13, fontWeight: FontWeight.w500,
                     color: task.completada
-                        ? const Color(0xFF9CA3AF) : const Color(0xFF1A1A2E),
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF1A1A2E),
                     decoration: task.completada
                         ? TextDecoration.lineThrough : null,
                   )),
@@ -279,7 +286,6 @@ class TaskRow extends StatelessWidget {
               ]),
             ]),
           ),
-
           if (!task.completada) _buildBotonAccion(context),
         ]),
 
@@ -293,18 +299,43 @@ class TaskRow extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _abrirContenido(context),
               icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
-              label: const Text('Ver documento', style: TextStyle(fontSize: 12)),
+              label: const Text('Ver documento',
+                  style: TextStyle(fontSize: 12)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF3B82F6),
                 side: const BorderSide(color: Color(0xFF3B82F6)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6)),
               ),
             ),
           ),
 
-        // Mensaje si no tiene contenido
+        // ── Mejora B: mostrar archivo entregado ───────────
+        if (task.completada &&
+            task.tipo == 'ENTREGA' &&
+            task.urlContenido != null &&
+            task.urlContenido!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 34, top: 6),
+            child: OutlinedButton.icon(
+              onPressed: () => _abrirContenido(context),
+              icon: const Icon(Icons.attach_file_rounded, size: 16),
+              label: const Text('Ver mi entrega',
+                  style: TextStyle(fontSize: 12)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF10B981),
+                side: const BorderSide(color: Color(0xFF10B981)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
+              ),
+            ),
+          ),
+
+        // Sin contenido
         if (!task.completada &&
             (task.tipo == 'DOCUMENTO' || task.tipo == 'VIDEO') &&
             (task.urlContenido == null || task.urlContenido!.isEmpty))
@@ -314,7 +345,8 @@ class TaskRow extends StatelessWidget {
               task.tipo == 'VIDEO'
                   ? 'El administrador aún no ha cargado el video.'
                   : 'El administrador aún no ha cargado el documento.',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+              style: const TextStyle(
+                  fontSize: 11, color: Color(0xFF9CA3AF)),
             ),
           ),
       ]),
@@ -342,7 +374,8 @@ class TaskRow extends StatelessWidget {
             foregroundColor: const Color(0xFF3B82F6),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           ),
-          child: const Text('Confirmar lectura', style: TextStyle(fontSize: 12)),
+          child: const Text('Confirmar lectura',
+              style: TextStyle(fontSize: 12)),
         );
       case 'VIDEO':
         return TextButton(
@@ -352,6 +385,17 @@ class TaskRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           ),
           child: const Text('Ver video', style: TextStyle(fontSize: 12)),
+        );
+      // ── Mejora B ─────────────────────────────────────────
+      case 'ENTREGA':
+        return TextButton(
+          onPressed: () => _mostrarEntrega(context),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF10B981),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          ),
+          child: const Text('Subir entrega',
+              style: TextStyle(fontSize: 12)),
         );
       default:
         return TextButton(
@@ -373,13 +417,217 @@ class TaskRow extends StatelessWidget {
       case 'VIDEO':
         _mostrarVideo(context);
         break;
+      case 'ENTREGA':
+        _mostrarEntrega(context);
+        break;
       default:
         onCompletar();
     }
   }
 }
 
-// ── Widget iframe para video embebido (Flutter Web) ───────────
+// ── Mejora B: Dialog de entrega del empleado ─────────────────
+
+class _EntregaDialog extends StatefulWidget {
+  final TaskProgressDetalle task;
+  final int idOnboarding;
+  final VoidCallback onEntregado;
+
+  const _EntregaDialog({
+    required this.task,
+    required this.idOnboarding,
+    required this.onEntregado,
+  });
+
+  @override
+  State<_EntregaDialog> createState() => _EntregaDialogState();
+}
+
+class _EntregaDialogState extends State<_EntregaDialog> {
+  bool _subiendo = false;
+  String? _error;
+  String? _nombreArchivo;
+
+  static const _verde = Color(0xFF10B981);
+
+  Future<void> _seleccionarYSubir() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+      withData: true,
+    );
+    if (result == null) return;
+    final file = result.files.single;
+    if (file.bytes == null) return;
+
+    setState(() { _subiendo = true; _error = null; });
+
+    try {
+      await ApiService.subirEntregaEmpleado(
+        idOnboarding: widget.idOnboarding,
+        idTask: widget.task.idTask,
+        bytes: file.bytes!,
+        nombreArchivo: file.name,
+      );
+      setState(() {
+        _nombreArchivo = file.name;
+        _subiendo = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString().replaceAll('Exception: ', '');
+        _subiendo = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16)),
+      title: Row(children: [
+        const Icon(Icons.upload_file_rounded,
+            color: _verde, size: 22),
+        const SizedBox(width: 8),
+        Expanded(child: Text(widget.task.titulo,
+            style: const TextStyle(fontSize: 16))),
+      ]),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Descripción si existe
+            if (widget.task.descripcion != null &&
+                widget.task.descripcion!.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: const Color(0xFFBBF7D0)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.info_outline,
+                      size: 14, color: _verde),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(
+                    widget.task.descripcion!,
+                    style: const TextStyle(
+                        fontSize: 13, color: Color(0xFF065F46)),
+                  )),
+                ]),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Error
+            if (_error != null) ...[
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.error_outline,
+                      size: 14, color: Color(0xFFDC2626)),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_error!,
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFFDC2626)))),
+                ]),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Archivo seleccionado
+            if (_nombreArchivo != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFBBF7D0)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.check_circle_rounded,
+                      size: 16, color: _verde),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(
+                    _nombreArchivo!,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF065F46)),
+                  )),
+                ]),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Botón subir
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _subiendo ? null : _seleccionarYSubir,
+                icon: _subiendo
+                    ? const SizedBox(
+                        width: 14, height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: _verde))
+                    : const Icon(Icons.upload_file_rounded, size: 18),
+                label: Text(
+                  _nombreArchivo != null
+                      ? 'Reemplazar archivo'
+                      : 'Seleccionar PDF o imagen',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _verde,
+                  side: const BorderSide(color: _verde),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Formatos aceptados: PDF, PNG, JPG',
+              style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar',
+              style: TextStyle(color: Color(0xFF6B7280))),
+        ),
+        ElevatedButton(
+          onPressed: _nombreArchivo == null ? null : widget.onEntregado,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _verde,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8)),
+          ),
+          child: const Text('Confirmar entrega'),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Widget iframe para video embebido ─────────────────────────
 
 class _VideoEmbed extends StatefulWidget {
   final String embedUrl;
@@ -447,8 +695,8 @@ class _FormularioDialogState extends State<_FormularioDialog> {
   @override
   void initState() {
     super.initState();
-    _textControllers = widget.preguntas
-        .map((_) => TextEditingController()).toList();
+    _textControllers =
+        widget.preguntas.map((_) => TextEditingController()).toList();
     _selectedUnica = List.filled(widget.preguntas.length, null);
     _selectedMultiple =
         List.generate(widget.preguntas.length, (_) => <String>{});
@@ -486,7 +734,8 @@ class _FormularioDialogState extends State<_FormularioDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.titulo,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          style: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w600)),
       content: SizedBox(
         width: 480,
         child: SingleChildScrollView(
@@ -501,11 +750,13 @@ class _FormularioDialogState extends State<_FormularioDialog> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: invalido
-                      ? const Color(0xFFFEF2F2) : const Color(0xFFF9FAFB),
+                      ? const Color(0xFFFEF2F2)
+                      : const Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: invalido
-                        ? const Color(0xFFFCA5A5) : const Color(0xFFE5E7EB),
+                        ? const Color(0xFFFCA5A5)
+                        : const Color(0xFFE5E7EB),
                   ),
                 ),
                 child: Column(
@@ -513,17 +764,17 @@ class _FormularioDialogState extends State<_FormularioDialog> {
                   children: [
                     Row(children: [
                       Expanded(child: Text('${i + 1}. ${p.pregunta}',
-                          style: const TextStyle(fontSize: 13,
+                          style: const TextStyle(
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF374151)))),
                       if (invalido)
                         const Text('Requerido',
-                            style: TextStyle(fontSize: 11,
+                            style: TextStyle(
+                                fontSize: 11,
                                 color: Color(0xFFDC2626))),
                     ]),
                     const SizedBox(height: 10),
-
-                    // Abierta
                     if (p.tipo == 'abierta')
                       TextField(
                         controller: _textControllers[i],
@@ -545,38 +796,34 @@ class _FormularioDialogState extends State<_FormularioDialog> {
                           contentPadding: const EdgeInsets.all(10),
                         ),
                       ),
-
-                    // Opción única
                     if (p.tipo == 'unica')
                       ...p.opciones.map((op) => RadioListTile<String>(
-                        value: op,
-                        groupValue: _selectedUnica[i],
-                        onChanged: (v) =>
-                            setState(() => _selectedUnica[i] = v),
-                        title: Text(op,
-                            style: const TextStyle(fontSize: 13)),
-                        activeColor: const Color(0xFF8B5CF6),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      )),
-
-                    // Opción múltiple
+                            value: op,
+                            groupValue: _selectedUnica[i],
+                            onChanged: (v) =>
+                                setState(() => _selectedUnica[i] = v),
+                            title: Text(op,
+                                style: const TextStyle(fontSize: 13)),
+                            activeColor: const Color(0xFF8B5CF6),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          )),
                     if (p.tipo == 'multiple')
                       ...p.opciones.map((op) => CheckboxListTile(
-                        value: _selectedMultiple[i].contains(op),
-                        onChanged: (v) => setState(() {
-                          if (v == true) {
-                            _selectedMultiple[i].add(op);
-                          } else {
-                            _selectedMultiple[i].remove(op);
-                          }
-                        }),
-                        title: Text(op,
-                            style: const TextStyle(fontSize: 13)),
-                        activeColor: const Color(0xFF8B5CF6),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      )),
+                            value: _selectedMultiple[i].contains(op),
+                            onChanged: (v) => setState(() {
+                              if (v == true) {
+                                _selectedMultiple[i].add(op);
+                              } else {
+                                _selectedMultiple[i].remove(op);
+                              }
+                            }),
+                            title: Text(op,
+                                style: const TextStyle(fontSize: 13)),
+                            activeColor: const Color(0xFF8B5CF6),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          )),
                   ],
                 ),
               );
@@ -608,7 +855,8 @@ class _FormularioDialogState extends State<_FormularioDialog> {
                 borderRadius: BorderRadius.circular(8)),
           ),
           child: _loading
-              ? const SizedBox(width: 16, height: 16,
+              ? const SizedBox(
+                  width: 16, height: 16,
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white))
               : const Text('Enviar respuestas'),
@@ -630,6 +878,8 @@ class _TipoBadge extends StatelessWidget {
     'FORMULARIO':   [Color(0xFFF5F3FF), Color(0xFF8B5CF6)],
     'CONFIRMACION': [Color(0xFFF0FDF4), Color(0xFF22C55E)],
     'BIENVENIDA':   [Color(0xFFEDE9FE), Color(0xFF7C3AED)],
+    // ── Mejora B ─────────────────────────────────────────
+    'ENTREGA':      [Color(0xFFF0FDF4), Color(0xFF10B981)],
   };
 
   @override
@@ -643,7 +893,9 @@ class _TipoBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(tipo,
-          style: TextStyle(fontSize: 10, color: c[1] as Color,
+          style: TextStyle(
+              fontSize: 10,
+              color: c[1] as Color,
               fontWeight: FontWeight.w500)),
     );
   }

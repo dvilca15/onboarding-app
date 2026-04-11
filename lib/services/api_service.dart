@@ -561,4 +561,60 @@ static Future<String> chatEmpleadoMensaje({
   final data = _handleResponse(response);
   return data['texto'] as String;
 }
+
+static Future<Map<String, dynamic>> cambiarPassword({
+    required String passwordActual,
+    required String passwordNueva,
+    required String passwordConfirmar,
+  }) async {
+    final token = await getToken();
+    final response = await http.put(
+      Uri.parse('$baseUrl/users/me/cambiar-password'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'password_actual':    passwordActual,
+        'password_nueva':     passwordNueva,
+        'password_confirmar': passwordConfirmar,
+      }),
+    );
+    return _handleResponse(response);
+  }
+  static Future<Map<String, dynamic>> tieneEmpleadosActivos(int idPlan) async {
+    final headers = await getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/planes/$idPlan/tiene-empleados-activos'),
+      headers: headers,
+    );
+    return _handleResponse(response);
+  }
+
+    static Future<Map<String, dynamic>> subirEntregaEmpleado({
+    required int idOnboarding,
+    required int idTask,
+    required List<int> bytes,
+    required String nombreArchivo,
+  }) async {
+    final token = await getToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(
+          '$baseUrl/onboarding/$idOnboarding/tasks/$idTask/subir-entrega'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(http.MultipartFile.fromBytes(
+      'archivo',
+      bytes,
+      filename: nombreArchivo,
+    ));
+    final response = await request.send();
+    final body = await response.stream.bytesToString();
+    if (response.statusCode != 200) {
+      final data = jsonDecode(body);
+      throw Exception(data['detail'] ?? 'Error al subir entrega');
+    }
+    return jsonDecode(body) as Map<String, dynamic>;
+  }
 }
