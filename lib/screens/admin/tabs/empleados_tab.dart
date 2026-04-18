@@ -23,6 +23,7 @@ class _EmpleadosTabState extends State<EmpleadosTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width >= 600;
     final filtrados = _search.isEmpty
         ? widget.usuarios
         : widget.usuarios.where((u) {
@@ -32,13 +33,14 @@ class _EmpleadosTabState extends State<EmpleadosTab> {
           }).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [BoxShadow(
-              color: Colors.black.withOpacity(0.04), blurRadius: 8,
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
               offset: const Offset(0, 2))],
         ),
         child: Column(children: [
@@ -59,87 +61,159 @@ class _EmpleadosTabState extends State<EmpleadosTab> {
             ),
           ),
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(children: [
-              Expanded(flex: 3, child: Text('Nombre',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13,
-                      color: Color(0xFF6B7280)))),
-              Expanded(flex: 4, child: Text('Email',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13,
-                      color: Color(0xFF6B7280)))),
-              Expanded(flex: 2, child: Text('Roles',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13,
-                      color: Color(0xFF6B7280)))),
-            ]),
-          ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+
           if (filtrados.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
               child: Text(
                 _search.isEmpty ? 'No hay empleados' : 'Sin resultados',
-                style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                style: const TextStyle(
+                    color: Color(0xFF9CA3AF), fontSize: 14),
               ),
             ),
-          ...filtrados.map((u) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-                border: Border(
-                    bottom: BorderSide(color: Color(0xFFF3F4F6)))),
-            child: Row(children: [
-              Expanded(flex: 3, child: Row(children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: const Color(0xFF1565C0).withOpacity(0.1),
-                  child: Text(u.inicial,
-                      style: const TextStyle(color: Color(0xFF1565C0),
-                          fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-                const SizedBox(width: 8),
-                Expanded(child: Text(u.nombre,
-                    style: const TextStyle(fontSize: 14))),
-              ])),
-              Expanded(flex: 4, child: Text(u.email,
-                  style: const TextStyle(fontSize: 13,
-                      color: Color(0xFF6B7280)))),
-              Expanded(flex: 2, child: Wrap(
-                spacing: 4,
-                children: u.roles.map((r) => Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: r == 'ADMIN_EMPRESA'
-                        ? const Color(0xFFEDE9FE)
-                        : const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(r,
-                      style: TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w500,
-                          color: r == 'ADMIN_EMPRESA'
-                              ? const Color(0xFF7C3AED)
-                              : const Color(0xFF0369A1))),
-                )).toList(),
-              )),
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18,
-                      color: Color(0xFF6B7280)),
-                  tooltip: 'Editar',
-                  onPressed: () => widget.onEditar(u),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 18,
-                      color: Color(0xFFDC2626)),
-                  tooltip: 'Eliminar',
-                  onPressed: () => widget.onEliminar(u),
-                ),
+
+          // ── Web: tabla con columnas ───────────────────────
+          if (isWide && filtrados.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(children: [
+                Expanded(flex: 3, child: Text('Nombre',
+                    style: TextStyle(fontWeight: FontWeight.w600,
+                        fontSize: 13, color: Color(0xFF6B7280)))),
+                Expanded(flex: 4, child: Text('Email',
+                    style: TextStyle(fontWeight: FontWeight.w600,
+                        fontSize: 13, color: Color(0xFF6B7280)))),
+                Expanded(flex: 2, child: Text('Roles',
+                    style: TextStyle(fontWeight: FontWeight.w600,
+                        fontSize: 13, color: Color(0xFF6B7280)))),
               ]),
-            ]),
-          )),
+            ),
+            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+            ...filtrados.map((u) => Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                  border: Border(
+                      bottom: BorderSide(color: Color(0xFFF3F4F6)))),
+              child: Row(children: [
+                Expanded(flex: 3, child: Row(children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor:
+                        const Color(0xFF1565C0).withOpacity(0.1),
+                    child: Text(u.inicial,
+                        style: const TextStyle(
+                            color: Color(0xFF1565C0),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(u.nombre,
+                      style: const TextStyle(fontSize: 14))),
+                ])),
+                Expanded(flex: 4, child: Text(u.email,
+                    style: const TextStyle(
+                        fontSize: 13, color: Color(0xFF6B7280)))),
+                Expanded(flex: 2, child: Wrap(
+                  spacing: 4,
+                  children: u.roles.map((r) => _rolBadge(r)).toList(),
+                )),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined,
+                        size: 18, color: Color(0xFF6B7280)),
+                    onPressed: () => widget.onEditar(u),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        size: 18, color: Color(0xFFDC2626)),
+                    onPressed: () => widget.onEliminar(u),
+                  ),
+                ]),
+              ]),
+            )),
+          ],
+
+          // ── Mobile: cards ─────────────────────────────────
+          if (!isWide && filtrados.isNotEmpty)
+            ...filtrados.map((u) => Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                  border: Border(
+                      bottom: BorderSide(color: Color(0xFFF3F4F6)))),
+              child: Row(children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor:
+                      const Color(0xFF1565C0).withOpacity(0.1),
+                  child: Text(u.inicial,
+                      style: const TextStyle(
+                          color: Color(0xFF1565C0),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(u.nombre,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(u.email,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280)),
+                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: u.roles.map((r) => _rolBadge(r)).toList(),
+                    ),
+                  ],
+                )),
+                Column(mainAxisSize: MainAxisSize.min, children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined,
+                        size: 18, color: Color(0xFF6B7280)),
+                    onPressed: () => widget.onEditar(u),
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(6),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        size: 18, color: Color(0xFFDC2626)),
+                    onPressed: () => widget.onEliminar(u),
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(6),
+                  ),
+                ]),
+              ]),
+            )),
         ]),
       ),
     );
   }
+
+  Widget _rolBadge(String r) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    decoration: BoxDecoration(
+      color: r == 'ADMIN_EMPRESA'
+          ? const Color(0xFFEDE9FE)
+          : const Color(0xFFE0F2FE),
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(
+      r == 'ADMIN_EMPRESA' ? 'ADMIN' : 'EMPLEADO',
+      style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: r == 'ADMIN_EMPRESA'
+              ? const Color(0xFF7C3AED)
+              : const Color(0xFF0369A1)),
+    ),
+  );
 }

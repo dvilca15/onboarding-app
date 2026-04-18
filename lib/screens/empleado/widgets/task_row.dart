@@ -1,7 +1,7 @@
 import 'dart:convert';
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:ui_web' as ui;
+//import 'dart:html' as html;
+//import 'dart:ui_web' as ui;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -65,7 +65,7 @@ String? _convertirEmbedUrl(String url) {
   return null;
 }
 
-int _iframeCounter = 0;
+//int _iframeCounter = 0;
 
 // ── TaskRow principal ─────────────────────────────────────────
 
@@ -102,7 +102,7 @@ class TaskRow extends StatelessWidget {
     }
   }
 
-  void _mostrarVideo(BuildContext context) {
+  /*void _mostrarVideo(BuildContext context) {
     if (task.urlContenido == null || task.urlContenido!.isEmpty) {
       onCompletar();
       return;
@@ -183,7 +183,16 @@ class TaskRow extends StatelessWidget {
         ),
       ),
     );
+  }*/
+
+  void _mostrarVideo(BuildContext context) {
+  if (task.urlContenido == null || task.urlContenido!.isEmpty) {
+    onCompletar();
+    return;
   }
+  _abrirContenido(context, task.urlContenido!);
+  Future.delayed(const Duration(seconds: 2), onCompletar);
+}
 
   void _mostrarFormulario(BuildContext context) {
     if (task.descripcion == null || task.descripcion!.isEmpty) {
@@ -643,7 +652,7 @@ class _EntregaDialogState extends State<_EntregaDialog> {
 
 // ── Video embed ───────────────────────────────────────────────
 
-class _VideoEmbed extends StatefulWidget {
+/*class _VideoEmbed extends StatefulWidget {
   final String embedUrl;
   const _VideoEmbed({required this.embedUrl});
 
@@ -678,7 +687,7 @@ class _VideoEmbedState extends State<_VideoEmbed> {
         height: 380,
         child: HtmlElementView(viewType: _viewId),
       );
-}
+}*/
 
 // ── Formulario dialog ─────────────────────────────────────────
 

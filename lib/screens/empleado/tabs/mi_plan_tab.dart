@@ -79,7 +79,6 @@ class _MiPlanTabState extends State<MiPlanTab> {
       final detalle = OnboardingDetalle.fromJson(raw);
 
       for (final step in detalle.stepsConProgreso) {
-        if (step.titulo == '__BIENVENIDA__') continue;
         if (step.tasks.any((t) => !t.completada)) {
           _stepsExpandidos.add(step.idStep);
           break;
@@ -326,10 +325,8 @@ class _MiPlanTabState extends State<MiPlanTab> {
   // ── Vista principal ───────────────────────────────────────
 
   Widget _buildConOnboarding() {
-    // Filtrar step oculto de bienvenida
-    final todosLosSteps = (_detalle?.stepsConProgreso ?? [])
-        .where((s) => s.titulo != '__BIENVENIDA__')
-        .toList();
+
+    final todosLosSteps = (_detalle?.stepsConProgreso ?? []).toList();
 
     // Paso 3: aplicar filtro — pendientes u completados
     final stepsFiltrados = _filtro == _FiltroPlan.pendientes
@@ -561,9 +558,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
   Widget _buildProgresoCard() {
     final progreso = _detalle?.progreso ?? 0.0;
     final estado = _detalle?.estado ?? 'PENDIENTE';
-    final steps = (_detalle?.stepsConProgreso ?? [])
-        .where((s) => s.titulo != '__BIENVENIDA__')
-        .toList();
+    final steps = (_detalle?.stepsConProgreso ?? []).toList();
     final totalTasks = steps.fold(0, (s, e) => s + e.totalTasks);
     final completadas = steps.fold(0, (s, e) => s + e.completadas);
     final colorEstado = _colorEstado(estado);

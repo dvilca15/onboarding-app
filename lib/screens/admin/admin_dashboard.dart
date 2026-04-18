@@ -1595,7 +1595,14 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
     final actions = <VoidCallback?>[
       null, _showNuevoEmpleado, _showNuevoPlan, _showAsignarPlan
     ];
-    const labels = [null, 'Nuevo empleado', 'Nuevo plan', 'Asignar plan'];
+    const labels = [
+      null, 'Nuevo empleado', 'Nuevo plan', 'Asignar plan'
+    ];
+    const labelsShort = [
+      null, 'Nuevo', 'Nuevo', 'Asignar'
+    ];
+
+    final isWide = MediaQuery.of(context).size.width >= 600;
 
     return Container(
       height: 60,
@@ -1604,7 +1611,6 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
           color: Colors.white,
           border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
       child: Row(children: [
-        // ── Paso 6: icono hamburguesa en mobile ───────────
         if (showMenuIcon)
           Builder(
             builder: (ctx) => IconButton(
@@ -1614,28 +1620,52 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
               tooltip: 'Menú',
             ),
           ),
-        Text(titles[_selectedIndex],
-            style: const TextStyle(fontSize: 18,
+        Expanded(
+          child: Text(
+            isWide ? titles[_selectedIndex] : _shortTitle(_selectedIndex),
+            style: const TextStyle(
+                fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A2E))),
-        const Spacer(),
+                color: Color(0xFF1A1A2E)),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         IconButton(
             icon: const Icon(Icons.refresh_rounded,
                 color: Color(0xFF6B7280)),
             onPressed: _loadData,
             tooltip: 'Actualizar'),
         if (actions[_selectedIndex] != null) ...[
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: actions[_selectedIndex],
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(labels[_selectedIndex]!),
-            style: primaryBtnStyle(),
-          ),
+          const SizedBox(width: 4),
+          isWide
+              ? ElevatedButton.icon(
+                  onPressed: actions[_selectedIndex],
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text(labels[_selectedIndex]!),
+                  style: primaryBtnStyle(),
+                )
+              : ElevatedButton.icon(
+                  onPressed: actions[_selectedIndex],
+                  icon: const Icon(Icons.add, size: 16),
+                  label: Text(labelsShort[_selectedIndex]!,
+                      style: const TextStyle(fontSize: 13)),
+                  style: primaryBtnStyle(),
+                ),
         ],
       ]),
     );
   }
+
+  String _shortTitle(int index) {
+    switch (index) {
+      case 0: return 'Dashboard';
+      case 1: return 'Empleados';
+      case 2: return 'Planes';
+      case 3: return 'Onboardings';
+      default: return 'Dashboard';
+    }
+  }
+
 
   Widget _buildContent() {
     if (_loadError != null) {
