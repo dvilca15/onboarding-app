@@ -1,7 +1,19 @@
+// ── TareaSugerida ─────────────────────────────────────────────
+class TareaSugerida {
+  final String titulo;
+  final String tipo;
+
+  const TareaSugerida({
+    required this.titulo,
+    required this.tipo,
+  });
+}
+
+// ── EtapaSugerida ─────────────────────────────────────────────
 class EtapaSugerida {
   final String nombre;
   final int duracionDias;
-  final List<String> tareas;
+  final List<TareaSugerida> tareas;
 
   const EtapaSugerida({
     required this.nombre,
@@ -12,23 +24,33 @@ class EtapaSugerida {
   factory EtapaSugerida.fromJson(Map<String, dynamic> json) => EtapaSugerida(
         nombre:       json['nombre'] as String,
         duracionDias: json['duracion_dias'] as int? ?? 1,
-        tareas:       (json['tareas'] as List<dynamic>? ?? [])
-            .map((t) => t is String ? t : (t as Map)['titulo'] as String)
+        tareas: (json['tareas'] as List<dynamic>? ?? [])
+            .map((t) {
+              if (t is String) {
+                return TareaSugerida(titulo: t, tipo: 'CONFIRMACION');
+              }
+              final m = t as Map<String, dynamic>;
+              return TareaSugerida(
+                titulo: m['titulo'] as String,
+                tipo:   m['tipo']   as String? ?? 'CONFIRMACION',
+              );
+            })
             .toList(),
       );
 
   Map<String, dynamic> toJson() => {
-        'nombre':       nombre,
+        'nombre':        nombre,
         'duracion_dias': duracionDias,
         'tareas': tareas.asMap().entries.map((e) => {
-          'titulo':      e.value,
-          'tipo':        'CONFIRMACION',
+          'titulo':      e.value.titulo,
+          'tipo':        e.value.tipo,
           'obligatorio': true,
           'orden':       e.key + 1,
         }).toList(),
       };
 }
 
+// ── PlanSugerido ──────────────────────────────────────────────
 class PlanSugerido {
   final String titulo;
   final int duracionDias;
@@ -58,7 +80,7 @@ class PlanSugerido {
       };
 }
 
-// Mensaje en el chat
+// ── ChatMensaje ───────────────────────────────────────────────
 class ChatMensaje {
   final String rol;
   final String texto;

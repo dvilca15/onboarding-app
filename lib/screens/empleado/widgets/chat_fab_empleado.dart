@@ -20,6 +20,8 @@ class ChatFabEmpleado extends StatefulWidget {
 class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
   bool _abierto  = false;
   bool _cargando = false;
+  bool _cargandoHistorial = false;
+
 
   final _controller = TextEditingController();
   final _scroll     = ScrollController();
@@ -42,16 +44,46 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
     super.dispose();
   }
 
-  void _initChat() {
-    if (_mensajes.isEmpty) {
+  Future<void> _initChat() async {
+  if (_mensajes.isNotEmpty) return;
+
+  setState(() => _cargandoHistorial = true);
+
+  try {
+    final historial =
+        await ApiService.obtenerHistorialChat(widget.idOnboarding);
+
+    if (historial.isEmpty) {
+      // Primera vez — saludo inicial
       _mensajes.add(_Msg(
         rol: 'assistant',
         texto: '¡Hola ${widget.nombreEmpleado}! Soy tu asistente de onboarding. '
                'Puedo ayudarte con dudas sobre tus tareas o tu progreso. '
                '¿En qué te puedo ayudar?',
       ));
+    } else {
+      // Cargar mensajes previos desde BD
+      for (final m in historial) {
+        _mensajes.add(_Msg(
+          rol: m['rol'] as String,
+          texto: m['contenido'] as String,
+        ));
+        _historial.add({
+          'role': m['rol'] == 'user' ? 'user' : 'assistant',
+          'content': m['contenido'] as String,
+        });
+      }
     }
+  } catch (_) {
+    // Si falla la carga, mostrar saludo normal
+    _mensajes.add(_Msg(
+      rol: 'assistant',
+      texto: '¡Hola ${widget.nombreEmpleado}! ¿En qué te puedo ayudar?',
+    ));
   }
+
+  setState(() => _cargandoHistorial = false);
+}
 
   void _scrollAbajo(ScrollController sc) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -360,10 +392,8 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
         // FAB
         GestureDetector(
           onTap: () {
-            setState(() {
-              _abierto = !_abierto;
-              if (_abierto) _initChat();
-            });
+            setState(() => _abierto = !_abierto);
+            if (_abierto) _initChat();
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),

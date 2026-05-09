@@ -82,30 +82,32 @@ class _ChatFabState extends State<ChatFab> {
     _scrollAbajo(sc);
   }
 
-  Future<void> _crearPlan(PlanSugerido plan) async {
-    try {
-      await ApiService.chatAdminCrearPlan(sugerencia: plan.toJson());
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Plan "${plan.titulo}" creado correctamente'),
-          backgroundColor: const Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
-        ));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: const Color(0xFFDC2626),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
-        ));
-      }
+Future<void> _crearPlan(PlanSugerido plan) async {
+  try {
+    await ApiService.chatAdminCrearPlan(sugerencia: {
+      'plan': plan.toJson(),
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Plan "${plan.titulo}" creado correctamente'),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
+      ));
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.toString().replaceAll('Exception: ', '')),
+        backgroundColor: const Color(0xFFDC2626),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
+      ));
     }
   }
+}
 
   // ── Dialog expandido ──────────────────────────────────────
 
@@ -446,6 +448,24 @@ class _PlanCard extends StatefulWidget {
 class _PlanCardState extends State<_PlanCard> {
   bool _expandido = false;
 
+  IconData _iconoTipo(String tipo) {
+    switch (tipo) {
+      case 'DOCUMENTO':   return Icons.description_outlined;
+      case 'VIDEO':       return Icons.play_circle_outline;
+      case 'FORMULARIO':  return Icons.list_alt_outlined;
+      default:            return Icons.radio_button_unchecked;
+    }
+  }
+
+  Color _colorTipo(String tipo) {
+    switch (tipo) {
+      case 'DOCUMENTO':  return const Color(0xFF2563EB);
+      case 'VIDEO':      return const Color(0xFFDC2626);
+      case 'FORMULARIO': return const Color(0xFF059669);
+      default:           return const Color(0xFF9CA3AF);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -468,12 +488,10 @@ class _PlanCardState extends State<_PlanCard> {
               Text(
                 '${widget.plan.duracionDias} días · '
                 '${widget.plan.etapas.length} etapas',
-                style: const TextStyle(fontSize: 11,
-                    color: Color(0xFF7C3AED)),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF7C3AED)),
               ),
             ],
           )),
-          // Botón ver/ocultar detalle
           InkWell(
             onTap: () => setState(() => _expandido = !_expandido),
             borderRadius: BorderRadius.circular(6),
@@ -481,13 +499,10 @@ class _PlanCardState extends State<_PlanCard> {
               padding: const EdgeInsets.all(4),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(_expandido ? 'Ocultar' : 'Ver detalle',
-                    style: const TextStyle(fontSize: 11,
-                        color: Color(0xFF7C3AED))),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF7C3AED))),
                 const SizedBox(width: 2),
                 Icon(
-                  _expandido
-                      ? Icons.expand_less_rounded
-                      : Icons.expand_more_rounded,
+                  _expandido ? Icons.expand_less_rounded : Icons.expand_more_rounded,
                   size: 16, color: const Color(0xFF7C3AED),
                 ),
               ]),
@@ -506,45 +521,50 @@ class _PlanCardState extends State<_PlanCard> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, children: [
-                // Número + nombre etapa
-                Row(children: [
-                  Container(
-                    width: 20, height: 20,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7C3AED),
-                      borderRadius: BorderRadius.circular(5),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Número + nombre etapa
+                  Row(children: [
+                    Container(
+                      width: 20, height: 20,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7C3AED),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Center(child: Text('${i + 1}',
+                          style: const TextStyle(color: Colors.white,
+                              fontSize: 10, fontWeight: FontWeight.bold))),
                     ),
-                    child: Center(child: Text('${i + 1}',
-                        style: const TextStyle(color: Colors.white,
-                            fontSize: 10, fontWeight: FontWeight.bold))),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(etapa.nombre,
-                      style: const TextStyle(fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF374151)))),
-                  Text('${etapa.duracionDias} días',
-                      style: const TextStyle(fontSize: 10,
-                          color: Color(0xFF9CA3AF))),
-                ]),
-                // Tareas
-                if (etapa.tareas.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  ...etapa.tareas.map((t) => Padding(
-                    padding: const EdgeInsets.only(left: 26, bottom: 3),
-                    child: Row(children: [
-                        const Icon(Icons.radio_button_unchecked,
-                            size: 10, color: Color(0xFF9CA3AF)),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(etapa.nombre,
+                        style: const TextStyle(fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151)))),
+                    Text('${etapa.duracionDias} días',
+                        style: const TextStyle(fontSize: 10,
+                            color: Color(0xFF9CA3AF))),
+                  ]),
+                  // Tareas
+                  if (etapa.tareas.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    ...etapa.tareas.map((t) => Padding(
+                      padding: const EdgeInsets.only(left: 26, bottom: 3),
+                      child: Row(children: [
+                        Icon(
+                          _iconoTipo(t.tipo),
+                          size: 11,
+                          color: _colorTipo(t.tipo),
+                        ),
                         const SizedBox(width: 4),
-                        Expanded(child: Text(t,
-                        style: const TextStyle(fontSize: 11,
-                            color: Color(0xFF6B7280)),
+                        Expanded(child: Text(t.titulo,   // ← t.titulo en vez de t
+                          style: const TextStyle(fontSize: 11,
+                              color: Color(0xFF6B7280)),
                         )),
-                    ]),
+                      ]),
                     )),
+                  ],
                 ],
-              ]),
+              ),
             );
           }),
         ],
