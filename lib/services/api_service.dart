@@ -623,6 +623,18 @@ static Future<Map<String, dynamic>> cambiarPassword({
     return jsonDecode(body) as Map<String, dynamic>;
   }
 
+  // ── Chat del empleado: historial guardado ──────────────────
+
+  static Future<List<Map<String, dynamic>>> obtenerHistorialChat(
+      int idOnboarding) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/chat/empleado/historial/$idOnboarding'),
+      headers: await getHeaders(),
+    );
+    final data = _handleResponse(response);
+    return List<Map<String, dynamic>>.from(data['mensajes']);
+  }
+
   // ── Base de conocimiento (RAG) ─────────────────────────────
 
   static Future<List<Map<String, dynamic>>> listarDocumentosConocimiento() async {

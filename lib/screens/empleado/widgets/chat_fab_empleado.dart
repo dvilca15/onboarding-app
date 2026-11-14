@@ -23,6 +23,7 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
   bool _abierto = false;
   bool _maximizado = false; // diálogo grande abierto: oculta el panel compacto
   bool _cargando = false;
+  bool _cargandoHistorial = false;
 
   final _controller = TextEditingController();
   final _scroll = ScrollController();
@@ -42,16 +43,39 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
     super.dispose();
   }
 
-  void _initChat() {
-    if (_mensajes.isEmpty) {
-      _mensajes.add(_Msg(
+  /// Carga la conversación guardada; si no hay, muestra el saludo inicial.
+  Future<void> _initChat() async {
+    if (_mensajes.isNotEmpty || _cargandoHistorial) return;
+    setState(() => _cargandoHistorial = true);
+    try {
+      final guardados =
+          await ApiService.obtenerHistorialChat(widget.idOnboarding);
+      if (!mounted) return;
+      if (guardados.isEmpty) {
+        _mensajes.add(_saludo());
+      } else {
+        for (final m in guardados) {
+          final esUsuario = m['rol'] == 'user';
+          final texto = m['contenido'] as String;
+          _mensajes.add(_Msg(rol: esUsuario ? 'user' : 'assistant', texto: texto));
+          _historial.add(
+              {'role': esUsuario ? 'user' : 'assistant', 'content': texto});
+        }
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _mensajes.add(_saludo());   // sin conexión al historial: chat nuevo
+    }
+    if (mounted) setState(() => _cargandoHistorial = false);
+    _scrollAbajo(_scroll);
+  }
+
+  _Msg _saludo() => _Msg(
         rol: 'assistant',
         texto: '¡Hola ${widget.nombreEmpleado}! Soy tu asistente de onboarding. '
-            'Puedo ayudarte con dudas sobre tus tareas o tu progreso. '
-            '¿En qué te puedo ayudar?',
-      ));
-    }
-  }
+            'Puedo ayudarte con dudas sobre tus tareas, tu progreso o las '
+            'políticas de la empresa. ¿En qué te puedo ayudar?',
+      );
 
   void _scrollAbajo(ScrollController sc) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -217,10 +241,10 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
         const SizedBox(height: 12),
         ChatFabButton(
           abierto: _abierto,
-          onTap: () => setState(() {
-            _abierto = !_abierto;
+          onTap: () {
+            setState(() => _abierto = !_abierto);
             if (_abierto) _initChat();
-          }),
+          },
         ),
       ],
     );
