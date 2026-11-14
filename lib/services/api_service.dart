@@ -3,7 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8000';
+  // Configurable: flutter run --dart-define=API_URL=http://10.0.2.2:8000
+  static const String baseUrl =
+      String.fromEnvironment('API_URL', defaultValue: 'http://localhost:8000');
 
   // ── Token ──────────────────────────────────────────────────
 
@@ -53,7 +55,7 @@ class ApiService {
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/register'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await getHeaders(), // requiere token de ADMIN_EMPRESA
       body: jsonEncode({
         'nombre': nombre,
         'email': email,
@@ -547,7 +549,7 @@ static Future<Map<String, dynamic>> subirArchivoTaskWeb({
   return jsonDecode(body) as Map<String, dynamic>;
 }
 
-static Future<String> chatEmpleadoMensaje({
+static Future<Map<String, dynamic>> chatEmpleadoMensaje({
   required String mensaje,
   required List<Map<String, String>> historial,
   required int idOnboarding,
@@ -562,8 +564,8 @@ static Future<String> chatEmpleadoMensaje({
       'id_onboarding': idOnboarding,
     }),
   );
-  final data = _handleResponse(response);
-  return data['texto'] as String;
+  // { texto: String, fuentes: [{numero, documento, extracto}] }
+  return _handleResponse(response) as Map<String, dynamic>;
 }
 
 static Future<Map<String, dynamic>> cambiarPassword({
@@ -619,5 +621,51 @@ static Future<Map<String, dynamic>> cambiarPassword({
       throw Exception(data['detail'] ?? 'Error al subir entrega');
     }
     return jsonDecode(body) as Map<String, dynamic>;
+  }
+
+  // ── Base de conocimiento (RAG) ─────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> listarDocumentosConocimiento() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/conocimiento/'),
+      headers: await getHeaders(),
+    );
+    final data = _handleResponse(response) as List;
+    return data.cast<Map<String, dynamic>>();
+  }
+
+  static Future<Map<String, dynamic>> subirDocumentoConocimiento({
+    required List<int> bytes,
+    required String nombreArchivo,
+    String? nombre,
+  }) async {
+    final token = await getToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/conocimiento/'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    if (nombre != null && nombre.isNotEmpty) request.fields['nombre'] = nombre;
+    request.files.add(http.MultipartFile.fromBytes(
+      'archivo',
+      bytes,
+      filename: nombreArchivo,
+    ));
+    // El procesamiento (embeddings) puede tardar: damos hasta 3 minutos.
+    final response = await request.send().timeout(const Duration(minutes: 3));
+    final body = await response.stream.bytesToString();
+    final data = jsonDecode(body);
+    if (response.statusCode != 201) {
+      throw Exception(data['detail'] ?? 'Error al subir el documento');
+    }
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<void> eliminarDocumentoConocimiento(int idDocumento) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/conocimiento/$idDocumento'),
+      headers: await getHeaders(),
+    );
+    if (response.statusCode != 204) _handleResponse(response);
   }
 }

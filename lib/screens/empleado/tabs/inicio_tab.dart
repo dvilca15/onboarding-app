@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../../models/onboarding.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────
 // InicioTab — Paso 4
@@ -26,10 +28,10 @@ class InicioTab extends StatelessWidget {
     required this.onboardings,
   });
 
-  static const _azul    = Color(0xFF1565C0);
-  static const _verde   = Color(0xFF10B981);
-  static const _gris    = Color(0xFF6B7280);
-  static const _fondo   = Color(0xFFF5F7FA);
+  static const _azul    = AppColors.primary;
+  static const _verde   = AppColors.success;
+  static const _gris    = AppColors.textMuted;
+  static const _fondo   = AppColors.bg;
 
   // ── Helpers ───────────────────────────────────────────────
 
@@ -39,6 +41,7 @@ class InicioTab extends StatelessWidget {
     final resultado = <_TareaUrgente>[];
     for (final step in detalle.stepsConProgreso) {
       if (step.titulo == '__BIENVENIDA__') continue;
+      if (step.bloqueada) continue; // etapas aún bloqueadas no se sugieren
       for (final task in step.tasks) {
         if (!task.completada) {
           resultado.add(_TareaUrgente(task: task, step: step));
@@ -70,25 +73,15 @@ class InicioTab extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: _fondo,
-      appBar: AppBar(
-        backgroundColor: _azul,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Inicio',
-            style: TextStyle(fontWeight: FontWeight.w600)),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Center(
-              child: Text(userName,
-                  style: const TextStyle(fontSize: 14)),
-            ),
-          ),
-        ],
+      appBar: PageBar(
+        title: 'Inicio',
+        subtitle: userName.isEmpty ? null : 'Hola, $userName',
       ),
-      body: detalle == null
-          ? _buildSinDatos()
-          : _buildConDatos(context, detalle!, userName),
+      body: ContentWidth(
+        child: detalle == null
+            ? _buildSinDatos()
+            : _buildConDatos(context, detalle!, userName),
+      ),
     );
   }
 
@@ -125,7 +118,7 @@ class InicioTab extends StatelessWidget {
     final pendientes = totalTasks - completadas;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -161,7 +154,7 @@ class InicioTab extends StatelessWidget {
             titulo: 'Tu plan',
             subtitulo:
                 '${steps.length} etapa${steps.length != 1 ? "s" : ""}',
-            color: const Color(0xFF7C3AED),
+            color: AppColors.primary,
           ),
           const SizedBox(height: 12),
           ...steps.asMap().entries.map(
@@ -189,11 +182,11 @@ class InicioTab extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF1976D2)],
+          colors: [AppColors.primaryHover, AppColors.primary, AppColors.primaryLight],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,7 +198,7 @@ class InicioTab extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -281,7 +274,7 @@ class InicioTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progreso / 100,
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
               valueColor:
                   const AlwaysStoppedAnimation<Color>(Colors.white),
               minHeight: 6,
@@ -320,7 +313,7 @@ class InicioTab extends StatelessWidget {
           icono: Icons.hourglass_empty_rounded,
           valor: '$pendientes',
           etiqueta: 'pendientes',
-          color: const Color(0xFFF59E0B),
+          color: AppColors.warning,
         ),
         const SizedBox(width: 10),
         _buildStatChip(
@@ -345,7 +338,8 @@ class InicioTab extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.border),
+          boxShadow: kShadowSm,
         ),
         child: Column(
           children: [
@@ -396,7 +390,7 @@ class InicioTab extends StatelessWidget {
                 style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A2E))),
+                    color: AppColors.text)),
             Text(subtitulo,
                 style:
                     const TextStyle(fontSize: 11, color: _gris)),
@@ -416,7 +410,8 @@ class InicioTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
+        boxShadow: kShadowSm,
       ),
       child: Row(
         children: [
@@ -441,7 +436,7 @@ class InicioTab extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF1A1A2E)),
+                      color: AppColors.text),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -541,7 +536,8 @@ class InicioTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
+        boxShadow: kShadowSm,
       ),
       child: Row(
         children: [
@@ -574,7 +570,7 @@ class InicioTab extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF1A1A2E)),
+                      color: AppColors.text),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
@@ -582,7 +578,7 @@ class InicioTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                   child: LinearProgressIndicator(
                     value: porcentaje / 100,
-                    backgroundColor: const Color(0xFFE5E7EB),
+                    backgroundColor: AppColors.border,
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                     minHeight: 4,
                   ),
@@ -611,26 +607,26 @@ class InicioTab extends StatelessWidget {
       case 'DOCUMENTO':
         return _ColorTipo(
           icono: Icons.picture_as_pdf_rounded,
-          fondo: const Color(0xFFEFF6FF),
-          texto: const Color(0xFF3B82F6),
+          fondo: AppColors.infoSoft,
+          texto: AppColors.info,
         );
       case 'VIDEO':
         return _ColorTipo(
           icono: Icons.play_circle_rounded,
-          fondo: const Color(0xFFFFF7ED),
-          texto: const Color(0xFFF97316),
+          fondo: AppColors.warningSoft,
+          texto: AppColors.warning,
         );
       case 'FORMULARIO':
         return _ColorTipo(
           icono: Icons.list_alt_rounded,
-          fondo: const Color(0xFFF5F3FF),
-          texto: const Color(0xFF8B5CF6),
+          fondo: AppColors.primarySoft,
+          texto: AppColors.primaryLight,
         );
       default:
         return _ColorTipo(
           icono: Icons.check_box_outline_blank_rounded,
-          fondo: const Color(0xFFF0FDF4),
-          texto: const Color(0xFF22C55E),
+          fondo: AppColors.successSoft,
+          texto: AppColors.success,
         );
     }
   }

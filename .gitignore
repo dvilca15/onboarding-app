@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Enlaces simbólicos a la caché de Flutter (las reglas con "/" final no los cubren)
+/build
+.dart_tool

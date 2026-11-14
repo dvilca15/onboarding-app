@@ -5,6 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../models/onboarding.dart';
 import '../../../services/api_service.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_dialog.dart';
+import '../../../theme/app_widgets.dart';
+import '../../../theme/app_toast.dart';
 
 
 class PerfilTab extends StatelessWidget {
@@ -15,9 +19,9 @@ class PerfilTab extends StatelessWidget {
     required this.onboardings,
   });
 
-  static const _azul  = Color(0xFF1565C0);
-  static const _gris  = Color(0xFF6B7280);
-  static const _fondo = Color(0xFFF5F7FA);
+  static const _azul  = AppColors.primary;
+  static const _gris  = AppColors.textMuted;
+  static const _fondo = AppColors.bg;
 
   String _iniciales(String nombre) {
     final partes = nombre.trim().split(' ');
@@ -32,15 +36,14 @@ class PerfilTab extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
       backgroundColor: _fondo,
-      appBar: AppBar(
-        backgroundColor: _azul,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Perfil',
-            style: TextStyle(fontWeight: FontWeight.w600)),
+      appBar: const PageBar(
+        title: 'Perfil',
+        subtitle: 'Tu cuenta y tu historial',
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: ContentWidth(
+        maxWidth: 720,
+        child: ListView(
+        padding: const EdgeInsets.all(24),
         children: [
           // ── Avatar + nombre ───────────────────────────────
           _buildCabecera(auth.userName),
@@ -68,6 +71,7 @@ class PerfilTab extends StatelessWidget {
           _buildCerrarSesionBtn(context, auth),
           const SizedBox(height: 20),
         ],
+      ),
       ),
     );
   }
@@ -101,7 +105,7 @@ class PerfilTab extends StatelessWidget {
             style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E)),
+                color: AppColors.text),
           ),
           const SizedBox(height: 4),
           Container(
@@ -145,7 +149,7 @@ class PerfilTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         children: [
@@ -192,7 +196,7 @@ class PerfilTab extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF1A1A2E))),
+                      color: AppColors.text)),
             ],
           ),
         ],
@@ -209,7 +213,7 @@ class PerfilTab extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.border),
         ),
         child: const Center(
           child: Text('Sin onboardings asignados',
@@ -222,7 +226,7 @@ class PerfilTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         children: onboardings.asMap().entries.map((e) {
@@ -270,7 +274,7 @@ class PerfilTab extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF1A1A2E)),
+                      color: AppColors.text),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
@@ -278,7 +282,7 @@ class PerfilTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                   child: LinearProgressIndicator(
                     value: progreso,
-                    backgroundColor: const Color(0xFFE5E7EB),
+                    backgroundColor: AppColors.border,
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                     minHeight: 4,
                   ),
@@ -337,7 +341,7 @@ class PerfilTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: ListTile(
         leading: Container(
@@ -383,11 +387,11 @@ class PerfilTab extends StatelessWidget {
           if (context.mounted) context.go('/login');
         },
         icon: const Icon(Icons.logout_rounded,
-            color: Color(0xFFDC2626), size: 18),
+            color: AppColors.danger, size: 18),
         label: const Text('Cerrar sesión',
-            style: TextStyle(color: Color(0xFFDC2626))),
+            style: TextStyle(color: AppColors.danger)),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFFFCA5A5)),
+          side: const BorderSide(color: AppColors.dangerBorder),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -401,11 +405,11 @@ class PerfilTab extends StatelessWidget {
   Color _colorEstado(String estado) {
     switch (estado) {
       case 'COMPLETADO':
-        return const Color(0xFF10B981);
+        return AppColors.success;
       case 'EN_PROGRESO':
-        return const Color(0xFFF59E0B);
+        return AppColors.primary;
       default:
-        return const Color(0xFF6B7280);
+        return AppColors.textMuted;
     }
   }
 
@@ -446,7 +450,7 @@ class _CambiarPasswordDialogState extends State<_CambiarPasswordDialog> {
   bool _guardando    = false;
   String? _errorApi;
 
-  static const _azul = Color(0xFF1565C0);
+  static const _azul = AppColors.primary;
 
   @override
   void dispose() {
@@ -471,10 +475,10 @@ class _CambiarPasswordDialogState extends State<_CambiarPasswordDialog> {
       if (mounted) {
         await context.read<AuthProvider>().marcarPasswordCambiado();
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
+        AppToast.fromSnackBar(context, 
           const SnackBar(
             content: Text('Contraseña actualizada correctamente'),
-            backgroundColor: Color(0xFF10B981),
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -489,79 +493,51 @@ class _CambiarPasswordDialogState extends State<_CambiarPasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16)),
-      title: const Row(
-        children: [
-          Icon(Icons.lock_reset_rounded,
-              color: _azul, size: 22),
-          SizedBox(width: 8),
-          Text('Cambiar contraseña',
-              style: TextStyle(fontSize: 16)),
-        ],
-      ),
-      content: SizedBox(
-        width: 400,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Error API
-              if (_errorApi != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: const Color(0xFFFCA5A5)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline,
-                          color: Color(0xFFDC2626), size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(_errorApi!,
-                            style: const TextStyle(
-                                color: Color(0xFFDC2626),
-                                fontSize: 12)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-              ],
-
-              _buildCampo(
+    return AppDialog(
+      maxWidth: 440,
+      icon: Icons.lock_reset_rounded,
+      title: 'Cambiar contraseña',
+      subtitle: 'Elige una contraseña nueva para tu cuenta.',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_errorApi != null) ...[
+              InlineBanner(_errorApi!, tone: BannerTone.error),
+              const SizedBox(height: 16),
+            ],
+            FieldLabel(
+              label: 'Contraseña actual',
+              child: _buildCampo(
                 controller: _actualCtrl,
-                label: 'Contraseña actual',
                 ver: _verActual,
-                onToggle: () =>
-                    setState(() => _verActual = !_verActual),
-                validator: (v) => (v == null || v.isEmpty)
-                    ? 'Requerido'
-                    : null,
+                onToggle: () => setState(() => _verActual = !_verActual),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Requerido' : null,
               ),
-              const SizedBox(height: 12),
-              _buildCampo(
+            ),
+            const SizedBox(height: 16),
+            FieldLabel(
+              label: 'Contraseña nueva',
+              help: 'Mínimo 6 caracteres.',
+              child: _buildCampo(
                 controller: _nuevaCtrl,
-                label: 'Contraseña nueva',
                 ver: _verNueva,
-                onToggle: () =>
-                    setState(() => _verNueva = !_verNueva),
+                onToggle: () => setState(() => _verNueva = !_verNueva),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Requerido';
                   if (v.length < 6) return 'Mínimo 6 caracteres';
                   return null;
                 },
               ),
-              const SizedBox(height: 12),
-              _buildCampo(
+            ),
+            const SizedBox(height: 16),
+            FieldLabel(
+              label: 'Confirmar contraseña nueva',
+              child: _buildCampo(
                 controller: _confirmarCtrl,
-                label: 'Confirmar contraseña nueva',
                 ver: _verConfirmar,
                 onToggle: () =>
                     setState(() => _verConfirmar = !_verConfirmar),
@@ -571,33 +547,18 @@ class _CambiarPasswordDialogState extends State<_CambiarPasswordDialog> {
                   return null;
                 },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed:
-              _guardando ? null : () => Navigator.pop(context),
-          child: const Text('Cancelar',
-              style: TextStyle(color: _azul)),
+        DialogCancelButton(
+          onPressed: _guardando ? null : () => Navigator.pop(context),
         ),
-        ElevatedButton(
-          onPressed: _guardando ? null : _guardar,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _azul,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8)),
-          ),
-          child: _guardando
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : const Text('Guardar'),
+        DialogPrimaryButton(
+          label: 'Guardar contraseña',
+          loading: _guardando,
+          onPressed: _guardar,
         ),
       ],
     );
@@ -605,7 +566,6 @@ class _CambiarPasswordDialogState extends State<_CambiarPasswordDialog> {
 
   Widget _buildCampo({
     required TextEditingController controller,
-    required String label,
     required bool ver,
     required VoidCallback onToggle,
     required String? Function(String?) validator,
@@ -613,42 +573,19 @@ class _CambiarPasswordDialogState extends State<_CambiarPasswordDialog> {
     return TextFormField(
       controller: controller,
       obscureText: !ver,
-      style: const TextStyle(fontSize: 13),
+      validator: validator,
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle:
-            const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-        filled: true,
-        fillColor: const Color(0xFFF9F9F9),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: _azul, width: 1.5),
-        ),
+        hintText: '••••••••',
         suffixIcon: IconButton(
           icon: Icon(
-            ver
-                ? Icons.visibility_off_rounded
-                : Icons.visibility_rounded,
-            color: const Color(0xFF9CA3AF),
-            size: 18,
+            ver ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            size: 20,
+            color: AppColors.textSubtle,
           ),
           onPressed: onToggle,
         ),
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12, vertical: 10),
       ),
-      validator: validator,
     );
   }
 }
+

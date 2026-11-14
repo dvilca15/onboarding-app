@@ -11,6 +11,8 @@ import 'widgets/onboarding_selector.dart';
 import 'widgets/bienvenida_modal.dart';
 import 'widgets/chat_fab_empleado.dart';
 import 'widgets/felicitacion_modal.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/app_toast.dart';
 
 
 class EmpleadoDashboard extends StatefulWidget {
@@ -150,17 +152,17 @@ Future<void> _cargarDetalle(int idOnboarding) async {
       );
       await _cargarDetalle(_onboardingSeleccionado!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        AppToast.fromSnackBar(context, const SnackBar(
           content: Text('¡Tarea completada!'),
-          backgroundColor: Color(0xFF10B981),
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        AppToast.fromSnackBar(context, SnackBar(
           content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: const Color(0xFFDC2626),
+          backgroundColor: AppColors.danger,
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -180,15 +182,15 @@ Future<void> _cargarDetalle(int idOnboarding) async {
       respuestas: respuestas,
     );
     await _cargarDetalle(_onboardingSeleccionado!);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+    if (mounted) AppToast.fromSnackBar(context, 
       const SnackBar(content: Text('Respuestas enviadas'),
-          backgroundColor: Color(0xFF10B981),
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating),
     );
   } catch (e) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+    if (mounted) AppToast.fromSnackBar(context, 
       SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: const Color(0xFFDC2626),
+          backgroundColor: AppColors.danger,
           behavior: SnackBarBehavior.floating),
     );
   }
@@ -198,9 +200,9 @@ Future<void> _cargarDetalle(int idOnboarding) async {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1565C0),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         title: const Text('Mi Onboarding',
@@ -256,20 +258,20 @@ Future<void> _cargarDetalle(int idOnboarding) async {
     child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.cloud_off_rounded, color: Color(0xFFDC2626), size: 48),
+        const Icon(Icons.cloud_off_rounded, color: AppColors.danger, size: 48),
         const SizedBox(height: 16),
         const Text('No se pudo cargar tu información',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E))),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.text)),
         const SizedBox(height: 8),
         Text(_loadError!, textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+            style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
         const SizedBox(height: 20),
         ElevatedButton.icon(
           onPressed: _loadData,
           icon: const Icon(Icons.refresh_rounded, size: 18),
           label: const Text('Reintentar'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1565C0),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -286,19 +288,19 @@ Future<void> _cargarDetalle(int idOnboarding) async {
         Container(
           width: 80, height: 80,
           decoration: BoxDecoration(
-            color: const Color(0xFF1565C0).withOpacity(0.1),
+            color: AppColors.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Icon(Icons.assignment_late_rounded,
-              color: Color(0xFF1565C0), size: 40),
+              color: AppColors.primary, size: 40),
         ),
         const SizedBox(height: 16),
         const Text('Sin onboarding asignado',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E))),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.text)),
         const SizedBox(height: 8),
         const Text('Contacta a tu administrador para\nque te asigne un plan.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+            style: TextStyle(fontSize: 14, color: AppColors.textMuted)),
       ]),
     ),
   );
@@ -313,10 +315,10 @@ Future<void> _cargarDetalle(int idOnboarding) async {
     final totalTasks       = steps.fold(0, (s, e) => s + e.totalTasks);
     final completadasTotal = steps.fold(0, (s, e) => s + e.completadas);
     final colorEstado      = estado == 'COMPLETADO'
-        ? const Color(0xFF10B981)
+        ? AppColors.success
         : estado == 'EN_PROGRESO'
-            ? const Color(0xFFF59E0B)
-            : const Color(0xFF6B7280);
+            ? AppColors.warning
+            : AppColors.textMuted;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -342,7 +344,7 @@ Future<void> _cargarDetalle(int idOnboarding) async {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF1976D2)],
+              colors: [AppColors.primaryHover, AppColors.primary, AppColors.primaryLight],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -413,19 +415,19 @@ Future<void> _cargarDetalle(int idOnboarding) async {
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEE2E2),
+              color: AppColors.dangerSoft,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFCA5A5)),
+              border: Border.all(color: AppColors.dangerBorder),
             ),
             child: Row(children: [
-              const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 18),
+              const Icon(Icons.error_outline, color: AppColors.danger, size: 18),
               const SizedBox(width: 8),
               Expanded(child: Text(_loadError!,
-                  style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13))),
+                  style: const TextStyle(color: AppColors.danger, fontSize: 13))),
               TextButton(
                 onPressed: () => _cargarDetalle(_onboardingSeleccionado!),
                 child: const Text('Reintentar',
-                    style: TextStyle(color: Color(0xFFDC2626), fontSize: 12)),
+                    style: TextStyle(color: AppColors.danger, fontSize: 12)),
               ),
             ]),
           ),
@@ -434,7 +436,7 @@ Future<void> _cargarDetalle(int idOnboarding) async {
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           const Text('Etapas del plan',
               style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E))),
+                  fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.text)),
           if (_loadingDetalle)
             const SizedBox(
                 width: 16, height: 16,
@@ -456,7 +458,7 @@ Future<void> _cargarDetalle(int idOnboarding) async {
                 _loadError != null
                     ? 'No se pudieron cargar las etapas.'
                     : 'Este plan no tiene etapas aún.',
-                style: const TextStyle(color: Color(0xFF6B7280)),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
             ),
           )

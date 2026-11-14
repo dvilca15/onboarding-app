@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../models/chat_models.dart';
 import '../../../services/api_service.dart';
+import '../../../widgets/chat_ui.dart';
 
 class ChatFabEmpleado extends StatefulWidget {
   final int idOnboarding;
@@ -18,16 +20,14 @@ class ChatFabEmpleado extends StatefulWidget {
 }
 
 class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
-  bool _abierto  = false;
+  bool _abierto = false;
+  bool _maximizado = false; // diálogo grande abierto: oculta el panel compacto
   bool _cargando = false;
 
   final _controller = TextEditingController();
-  final _scroll     = ScrollController();
+  final _scroll = ScrollController();
   final List<_Msg> _mensajes = [];
   final List<Map<String, String>> _historial = [];
-
-  static const _azul      = Color(0xFF1565C0);
-  static const _azulClaro = Color(0xFFE3F2FD);
 
   static const _sugerencias = [
     '¿Qué tareas me faltan?',
@@ -47,8 +47,8 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
       _mensajes.add(_Msg(
         rol: 'assistant',
         texto: '¡Hola ${widget.nombreEmpleado}! Soy tu asistente de onboarding. '
-               'Puedo ayudarte con dudas sobre tus tareas o tu progreso. '
-               '¿En qué te puedo ayudar?',
+            'Puedo ayudarte con dudas sobre tus tareas o tu progreso. '
+            '¿En qué te puedo ayudar?',
       ));
     }
   }
@@ -74,20 +74,26 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
     setDialog?.call(() {});
     _scrollAbajo(sc);
     try {
-      final respuesta = await ApiService.chatEmpleadoMensaje(
+      final resp = await ApiService.chatEmpleadoMensaje(
         mensaje: texto,
         historial: List.from(_historial),
         idOnboarding: widget.idOnboarding,
       );
+      final respuesta = resp['texto'] as String? ?? '';
+      final fuentes = (resp['fuentes'] as List<dynamic>? ?? [])
+          .map((f) => FuenteChat.fromJson(f as Map<String, dynamic>))
+          .toList();
       _historial.add({'role': 'user', 'content': texto});
       _historial.add({'role': 'assistant', 'content': respuesta});
+      if (!mounted) return;
       setState(() {
-        _mensajes.add(_Msg(rol: 'assistant', texto: respuesta));
+        _mensajes.add(_Msg(rol: 'assistant', texto: respuesta, fuentes: fuentes));
         _cargando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _mensajes.add(_Msg(
+        _mensajes.add(const _Msg(
             rol: 'assistant',
             texto: 'Ocurrió un error. Por favor intenta de nuevo.'));
         _cargando = false;
@@ -101,283 +107,120 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
 
   void _abrirExpandido() {
     final scrollExpandido = ScrollController();
+    setState(() => _maximizado = true);
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialog) => Dialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16)),
-          insetPadding: const EdgeInsets.all(40),
-          child: SizedBox(
-            width: 720,
-            height: 580,
-            child: Column(children: [
-              _buildHeader(
-                  isExpandido: true,
-                  onExpandir: () => Navigator.pop(ctx),
-                  onCerrar: null),
-              Expanded(child: _buildMensajes(sc: scrollExpandido)),
-              if (_mensajes.length == 1 && !_cargando)
-                _buildSugerencias(sc: scrollExpandido, setDialog: setDialog),
-              _buildInput(
-                  sc: scrollExpandido, setDialog: setDialog),
-            ]),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.all(32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760, maxHeight: 640),
+            child: Container(
+              decoration: chatPanelDecoration(),
+              child: _contenido(
+                sc: scrollExpandido,
+                isExpandido: true,
+                onExpandir: () => Navigator.pop(ctx),
+                setDialog: setDialog,
+              ),
+            ),
           ),
         ),
       ),
-    ).then((_) => scrollExpandido.dispose());
+    ).then((_) {
+      scrollExpandido.dispose();
+      if (mounted) setState(() => _maximizado = false);
+    });
   }
 
-  // ── Widgets ───────────────────────────────────────────────
+  // ── Contenido (compartido por panel y diálogo) ────────────
 
-  Widget _buildHeader({
+  Widget _contenido({
+    required ScrollController sc,
     required bool isExpandido,
     required VoidCallback onExpandir,
     VoidCallback? onCerrar,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: _azul,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-      ),
-      child: Row(children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: Colors.white.withOpacity(0.2),
-          child: const Text('IA',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                  color: Colors.white)),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Asistente de onboarding',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                  color: Colors.white)),
-          Text(widget.nombrePlan,
-              style: TextStyle(fontSize: 11,
-                  color: Colors.white.withOpacity(0.75)),
-              overflow: TextOverflow.ellipsis),
-        ])),
-        InkWell(
-          onTap: onExpandir,
-          borderRadius: BorderRadius.circular(6),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Icon(
-              isExpandido
-                  ? Icons.close_fullscreen_rounded
-                  : Icons.open_in_full_rounded,
-              color: Colors.white, size: 18,
-            ),
-          ),
-        ),
-        if (onCerrar != null) ...[
-          const SizedBox(width: 4),
-          InkWell(
-            onTap: onCerrar,
-            borderRadius: BorderRadius.circular(6),
-            child: const Padding(
-              padding: EdgeInsets.all(4),
-              child: Icon(Icons.close_rounded, color: Colors.white, size: 18),
-            ),
-          ),
-        ],
-      ]),
-    );
-  }
-
-  Widget _buildMensajes({required ScrollController sc}) {
-    return ListView.builder(
-      controller: sc,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      itemCount: _mensajes.length + (_cargando ? 1 : 0),
-      itemBuilder: (ctx, i) {
-        if (i == _mensajes.length) return const _TypingIndicator();
-        final msg = _mensajes[i];
-        final esUsuario = msg.rol == 'user';
-        return Align(
-          alignment: esUsuario
-              ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 8),
-            constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.6),
-            decoration: BoxDecoration(
-              color: esUsuario ? _azul : Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(12),
-                topRight: const Radius.circular(12),
-                bottomLeft: Radius.circular(esUsuario ? 12 : 4),
-                bottomRight: Radius.circular(esUsuario ? 4 : 12),
-              ),
-              border: esUsuario
-                  ? null
-                  : Border.all(color: const Color(0xFFE5E7EB),
-                  width: 0.5),
-            ),
-            child: Text(msg.texto,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: esUsuario
-                      ? Colors.white : const Color(0xFF374151),
-                  height: 1.5,
-                )),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSugerencias({
-    required ScrollController sc,
     StateSetter? setDialog,
   }) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-      child: Wrap(
-        spacing: 6, runSpacing: 6,
-        children: _sugerencias.map((s) => GestureDetector(
-          onTap: () {
+    return Column(children: [
+      ChatHeader(
+        title: 'Asistente de onboarding',
+        subtitle: widget.nombrePlan,
+        isExpandido: isExpandido,
+        onExpandir: onExpandir,
+        onCerrar: onCerrar,
+      ),
+      Expanded(
+        child: ListView.builder(
+          controller: sc,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          itemCount: _mensajes.length + (_cargando ? 1 : 0),
+          itemBuilder: (ctx, i) {
+            if (i == _mensajes.length) return const ChatTyping();
+            final msg = _mensajes[i];
+            return ChatBubble(
+              texto: msg.texto,
+              esUsuario: msg.rol == 'user',
+              fuentes: msg.fuentes
+                  .map((f) => (
+                        numero: f.numero,
+                        documento: f.documento,
+                        extracto: f.extracto
+                      ))
+                  .toList(),
+            );
+          },
+        ),
+      ),
+      if (_mensajes.length == 1 && !_cargando)
+        ChatSuggestions(
+          items: _sugerencias,
+          onTap: (s) {
             _controller.text = s;
             _enviar(sc, setDialog: setDialog);
           },
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: _azulClaro,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF90CAF9)),
-            ),
-            child: Text(s,
-                style: const TextStyle(fontSize: 11,
-                    color: _azul, fontWeight: FontWeight.w500)),
-          ),
-        )).toList(),
+        ),
+      ChatInput(
+        controller: _controller,
+        cargando: _cargando,
+        hint: 'Pregunta sobre tus tareas o progreso…',
+        showHint: isExpandido,
+        onSend: () => _enviar(sc, setDialog: setDialog),
       ),
-    );
-  }
-
-  Widget _buildInput({
-    required ScrollController sc,
-    StateSetter? setDialog,
-  }) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-            top: BorderSide(color: Color(0xFFE5E7EB), width: 0.5)),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
-      ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Expanded(
-          child: TextField(
-            controller: _controller,
-            maxLines: 3, minLines: 1,
-            style: const TextStyle(fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Pregunta sobre tus tareas o progreso...',
-              hintStyle: const TextStyle(
-                  color: Color(0xFF9CA3AF), fontSize: 13),
-              filled: true,
-              fillColor: const Color(0xFFF5F4EE),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 8),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: () => _enviar(sc, setDialog: setDialog),
-          child: Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-              color: _cargando
-                  ? const Color(0xFF90CAF9) : _azul,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.send_rounded,
-                color: Colors.white, size: 16),
-          ),
-        ),
-      ]),
-    );
+    ]);
   }
 
   // ── Build principal ───────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final ancho = MediaQuery.of(context).size.width;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Panel compacto
-        if (_abierto)
+        if (_abierto && !_maximizado)
           Container(
-            width: 320, height: 400,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+            width: ancho < 400 ? ancho - 32 : 380,
+            height: 500,
+            decoration: chatPanelDecoration(),
+            child: _contenido(
+              sc: _scroll,
+              isExpandido: false,
+              onExpandir: _abrirExpandido,
+              onCerrar: () => setState(() => _abierto = false),
             ),
-            child: Column(children: [
-              _buildHeader(
-                isExpandido: false,
-                onExpandir: _abrirExpandido,
-                onCerrar: () => setState(() => _abierto = false),
-              ),
-              Expanded(child: _buildMensajes(sc: _scroll)),
-              if (_mensajes.length == 1 && !_cargando)
-                _buildSugerencias(sc: _scroll),
-              _buildInput(sc: _scroll),
-            ]),
           ),
         const SizedBox(height: 12),
-        // FAB
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _abierto = !_abierto;
-              if (_abierto) _initChat();
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 52, height: 52,
-            decoration: BoxDecoration(
-              color: _abierto
-                  ? const Color(0xFF0D47A1) : _azul,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _abierto ? Icons.close_rounded : Icons.chat_outlined,
-              color: Colors.white, size: 22,
-            ),
-          ),
+        ChatFabButton(
+          abierto: _abierto,
+          onTap: () => setState(() {
+            _abierto = !_abierto;
+            if (_abierto) _initChat();
+          }),
         ),
       ],
     );
@@ -387,62 +230,6 @@ class _ChatFabEmpleadoState extends State<ChatFabEmpleado> {
 class _Msg {
   final String rol;
   final String texto;
-  const _Msg({required this.rol, required this.texto});
-}
-
-class _TypingIndicator extends StatefulWidget {
-  const _TypingIndicator();
-  @override
-  State<_TypingIndicator> createState() => _TypingIndicatorState();
-}
-
-class _TypingIndicatorState extends State<_TypingIndicator>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _anim = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900))
-      ..repeat();
-  }
-
-  @override
-  void dispose() { _anim.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12)
-              .copyWith(bottomLeft: const Radius.circular(4)),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 0.5),
-        ),
-        child: AnimatedBuilder(
-          animation: _anim,
-          builder: (_, __) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(3, (i) {
-              final opacity =
-                  ((_anim.value * 3 - i) % 1).clamp(0.2, 1.0);
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                width: 6, height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF888780).withOpacity(opacity),
-                ),
-              );
-            }),
-          ),
-        ),
-      ),
-    );
-  }
+  final List<FuenteChat> fuentes;
+  const _Msg({required this.rol, required this.texto, this.fuentes = const []});
 }

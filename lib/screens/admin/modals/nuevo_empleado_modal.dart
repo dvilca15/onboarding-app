@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/api_service.dart';
 import '../widgets/ui_helpers.dart';
+import '../../../theme/app_dialog.dart';
 
 class NuevoEmpleadoModal extends StatefulWidget {
   final VoidCallback onCreated;
@@ -60,45 +61,45 @@ class _NuevoEmpleadoModalState extends State<NuevoEmpleadoModal> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Nuevo empleado',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-      content: SizedBox(
-        width: 400,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              modalField('Nombre completo', _nombreCtrl, Icons.person_outline,
-                  (v) => v!.isEmpty ? 'Requerido' : null),
-              const SizedBox(height: 12),
-              modalField('Correo electrónico', _emailCtrl, Icons.email_outlined,
-                  (v) {
-                if (v!.isEmpty) return 'Requerido';
-                if (!v.contains('@')) return 'Email inválido';
-                return null;
-              }),
-              const SizedBox(height: 12),
-              modalField('Contraseña', _passCtrl, Icons.lock_outline, (v) {
-                if (v!.isEmpty) return 'Requerido';
-                if (v.length < 6) return 'Mínimo 6 caracteres';
-                return null;
-              }, obscure: true),
-            ],
-          ),
+    return AppDialog(
+      icon: Icons.person_add_alt_1_rounded,
+      title: 'Nuevo empleado',
+      subtitle: 'Crea su cuenta. Podrá entrar con este correo y contraseña.',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            modalField('Nombre completo', _nombreCtrl, Icons.person_outline,
+                (v) => v!.isEmpty ? 'Requerido' : null,
+                hint: 'Ana Pérez'),
+            const SizedBox(height: 16),
+            modalField('Correo electrónico', _emailCtrl, Icons.email_outlined,
+                (v) {
+              if (v!.isEmpty) return 'Requerido';
+              if (!v.contains('@')) return 'Email inválido';
+              return null;
+            }, hint: 'ana@empresa.com'),
+            const SizedBox(height: 16),
+            modalField('Contraseña inicial', _passCtrl, Icons.lock_outline,
+                (v) {
+              if (v!.isEmpty) return 'Requerido';
+              if (v.length < 6) return 'Mínimo 6 caracteres';
+              return null;
+            },
+                obscure: true,
+                help: 'Mínimo 6 caracteres. Se le pedirá cambiarla al '
+                    'primer ingreso.'),
+          ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar',
-              style: TextStyle(color: Color(0xFF6B7280))),
-        ),
-        ElevatedButton(
-          onPressed: _loading ? null : _submit,
-          style: primaryBtnStyle(),
-          child: _loading ? btnSpinner() : const Text('Crear empleado'),
+        DialogCancelButton(
+            onPressed: _loading ? null : () => Navigator.pop(context)),
+        DialogPrimaryButton(
+          label: 'Crear empleado',
+          loading: _loading,
+          onPressed: _submit,
         ),
       ],
     );

@@ -9,6 +9,9 @@ import '../widgets/step_card.dart';
 import '../widgets/onboarding_selector.dart';
 import '../widgets/bienvenida_modal.dart';
 import '../widgets/felicitacion_modal.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_widgets.dart';
+import '../../../theme/app_toast.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Filtro de vista disponible en Mi Plan
@@ -79,7 +82,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
       final detalle = OnboardingDetalle.fromJson(raw);
 
       for (final step in detalle.stepsConProgreso) {
-        if (step.tasks.any((t) => !t.completada)) {
+        if (!step.bloqueada && step.tasks.any((t) => !t.completada)) {
           _stepsExpandidos.add(step.idStep);
           break;
         }
@@ -94,10 +97,13 @@ class _MiPlanTabState extends State<MiPlanTab> {
 
       if (detalle.progreso >= 100 && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          final etapas = detalle.stepsConProgreso;
           FelicitacionModal.show(
             context: context,
             nombreEmpleado: context.read<AuthProvider>().userName,
             nombrePlan: detalle.nombrePlan,
+            totalEtapas: etapas.length,
+            totalTareas: etapas.fold<int>(0, (s, e) => s + e.totalTasks),
           );
         });
       }
@@ -134,11 +140,17 @@ class _MiPlanTabState extends State<MiPlanTab> {
       if (!mounted) return;
       setState(() => _bienvenidaMostrada = true);
 
+      final etapas = _detalle?.stepsConProgreso ?? const <StepConProgreso>[];
+      final dias = etapas.fold<int>(0, (s, e) => s + (e.duracionDias ?? 0));
+
       await BienvenidaModal.show(
         context: context,
         nombreEmpleado: context.read<AuthProvider>().userName,
         nombrePlan: onboardingActivo.nombrePlan,
         mensaje: mensaje,
+        totalEtapas: etapas.length,
+        totalTareas: etapas.fold<int>(0, (s, e) => s + e.totalTasks),
+        totalDias: dias,
         onLeido: () async {
           try {
             await ApiService.completarTask(
@@ -193,11 +205,11 @@ class _MiPlanTabState extends State<MiPlanTab> {
 
   void _mostrarSnackbar(String mensaje, {required bool esError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    AppToast.fromSnackBar(context, 
       SnackBar(
         content: Text(mensaje),
         backgroundColor:
-            esError ? const Color(0xFFDC2626) : const Color(0xFF10B981),
+            esError ? AppColors.danger : AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -208,28 +220,20 @@ class _MiPlanTabState extends State<MiPlanTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.bg,
       appBar: _buildAppBar(),
-      body: _buildBody(),
+      body: ContentWidth(child: _buildBody()),
     );
   }
 
-  AppBar _buildAppBar() {
-    final userName = context.watch<AuthProvider>().userName;
-    return AppBar(
-      backgroundColor: const Color(0xFF1565C0),
-      foregroundColor: Colors.white,
-      elevation: 0,
-      title: const Text('Mi Plan',
-          style: TextStyle(fontWeight: FontWeight.w600)),
+  PreferredSizeWidget _buildAppBar() {
+    return PageBar(
+      title: 'Mi plan',
+      subtitle: 'Tu ruta de incorporación',
       actions: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Center(
-              child: Text(userName, style: const TextStyle(fontSize: 14))),
-        ),
         IconButton(
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const Icon(Icons.refresh_rounded,
+              color: AppColors.textMuted, size: 20),
           tooltip: 'Actualizar',
           onPressed: () {
             _bienvenidaMostrada = false;
@@ -259,25 +263,25 @@ class _MiPlanTabState extends State<MiPlanTab> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.cloud_off_rounded,
-                  color: Color(0xFFDC2626), size: 48),
+                  color: AppColors.danger, size: 48),
               const SizedBox(height: 16),
               const Text('No se pudo cargar tu información',
                   style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A2E))),
+                      color: AppColors.text)),
               const SizedBox(height: 8),
               Text(_loadError!,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                      fontSize: 13, color: Color(0xFF6B7280))),
+                      fontSize: 13, color: AppColors.textMuted)),
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: _initCargaInicial,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Reintentar'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1565C0),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -299,23 +303,23 @@ class _MiPlanTabState extends State<MiPlanTab> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1565C0).withOpacity(0.1),
+                  color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(Icons.assignment_late_rounded,
-                    color: Color(0xFF1565C0), size: 40),
+                    color: AppColors.primary, size: 40),
               ),
               const SizedBox(height: 16),
               const Text('Sin onboarding asignado',
                   style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A2E))),
+                      color: AppColors.text)),
               const SizedBox(height: 8),
               const Text(
                 'Contacta a tu administrador para\nque te asigne un plan.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                style: TextStyle(fontSize: 14, color: AppColors.textMuted),
               ),
             ],
           ),
@@ -385,7 +389,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
                 style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A2E)),
+                    color: AppColors.text),
               ),
               if (_loadingDetalle)
                 const SizedBox(
@@ -411,9 +415,11 @@ class _MiPlanTabState extends State<MiPlanTab> {
                     step: e.value,
                     numero: todosLosSteps.indexOf(e.value) + 1,
                     idOnboarding: _onboardingSeleccionado!,
-                    expandido: _filtro == _FiltroPlan.pendientes
-                        ? _stepsExpandidos.contains(e.value.idStep)
-                        : true, // completados siempre expandidos
+                    expandido: e.value.bloqueada
+                        ? false
+                        : _filtro == _FiltroPlan.pendientes
+                            ? _stepsExpandidos.contains(e.value.idStep)
+                            : true, // completados siempre expandidos
                     onToggle: () => setState(() {
                       _stepsExpandidos.contains(e.value.idStep)
                           ? _stepsExpandidos.remove(e.value.idStep)
@@ -434,7 +440,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFE5E7EB),
+        color: AppColors.border,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -443,14 +449,14 @@ class _MiPlanTabState extends State<MiPlanTab> {
             label: 'Pendientes',
             count: pendientes,
             activo: _filtro == _FiltroPlan.pendientes,
-            color: const Color(0xFF1565C0),
+            color: AppColors.primary,
             onTap: () => setState(() => _filtro = _FiltroPlan.pendientes),
           ),
           _buildFiltroBtn(
             label: 'Completados',
             count: completadas,
             activo: _filtro == _FiltroPlan.completados,
-            color: const Color(0xFF10B981),
+            color: AppColors.success,
             onTap: () => setState(() => _filtro = _FiltroPlan.completados),
           ),
         ],
@@ -493,7 +499,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
                   fontSize: 13,
                   fontWeight:
                       activo ? FontWeight.w600 : FontWeight.w400,
-                  color: activo ? color : const Color(0xFF6B7280),
+                  color: activo ? color : AppColors.textMuted,
                 ),
               ),
               const SizedBox(width: 6),
@@ -503,7 +509,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
                 decoration: BoxDecoration(
                   color: activo
                       ? color.withOpacity(0.12)
-                      : const Color(0xFFD1D5DB),
+                      : AppColors.borderStrong,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -511,7 +517,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: activo ? color : const Color(0xFF9CA3AF),
+                    color: activo ? color : AppColors.textSubtle,
                   ),
                 ),
               ),
@@ -535,8 +541,8 @@ class _MiPlanTabState extends State<MiPlanTab> {
                   : Icons.hourglass_empty_rounded,
               size: 48,
               color: esPendientes
-                  ? const Color(0xFF10B981)
-                  : const Color(0xFF9CA3AF),
+                  ? AppColors.success
+                  : AppColors.textSubtle,
             ),
             const SizedBox(height: 12),
             Text(
@@ -545,7 +551,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
                   : 'Aún no has completado ninguna tarea.',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  fontSize: 14, color: Color(0xFF6B7280)),
+                  fontSize: 14, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -568,7 +574,7 @@ class _MiPlanTabState extends State<MiPlanTab> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF1976D2)],
+          colors: [AppColors.primaryHover, AppColors.primary, AppColors.primaryLight],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -659,25 +665,25 @@ class _MiPlanTabState extends State<MiPlanTab> {
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEE2E2),
+        color: AppColors.dangerSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFCA5A5)),
+        border: Border.all(color: AppColors.dangerBorder),
       ),
       child: Row(
         children: [
           const Icon(Icons.error_outline,
-              color: Color(0xFFDC2626), size: 18),
+              color: AppColors.danger, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(_loadError!,
                 style: const TextStyle(
-                    color: Color(0xFFDC2626), fontSize: 13)),
+                    color: AppColors.danger, fontSize: 13)),
           ),
           TextButton(
             onPressed: () => _cargarDetalle(_onboardingSeleccionado!),
             child: const Text('Reintentar',
                 style: TextStyle(
-                    color: Color(0xFFDC2626), fontSize: 12)),
+                    color: AppColors.danger, fontSize: 12)),
           ),
         ],
       ),
@@ -687,11 +693,11 @@ class _MiPlanTabState extends State<MiPlanTab> {
   Color _colorEstado(String estado) {
     switch (estado) {
       case 'COMPLETADO':
-        return const Color(0xFF10B981);
+        return AppColors.success;
       case 'EN_PROGRESO':
-        return const Color(0xFFF59E0B);
+        return AppColors.primary;
       default:
-        return const Color(0xFF6B7280);
+        return AppColors.textMuted;
     }
   }
 }

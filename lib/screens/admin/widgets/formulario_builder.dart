@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../theme/app_theme.dart';
 
 // ── Modelo de pregunta ────────────────────────────────────────
 
@@ -125,18 +126,18 @@ class _FormularioBuilderState extends State<FormularioBuilder> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F3FF),
+            color: AppColors.primarySoft,
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Row(
             children: [
-              Icon(Icons.quiz_outlined, size: 14, color: Color(0xFF8B5CF6)),
+              Icon(Icons.quiz_outlined, size: 14, color: AppColors.primaryLight),
               SizedBox(width: 6),
               Expanded(
                 child: Text(
                   'Agrega preguntas. El empleado deberá responderlas para completar esta tarea.',
                   style:
-                      TextStyle(fontSize: 11, color: Color(0xFF8B5CF6)),
+                      TextStyle(fontSize: 11, color: AppColors.primaryLight),
                 ),
               ),
             ],
@@ -171,8 +172,8 @@ class _FormularioBuilderState extends State<FormularioBuilder> {
             label: const Text('Agregar pregunta',
                 style: TextStyle(fontSize: 13)),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF8B5CF6),
-              side: const BorderSide(color: Color(0xFF8B5CF6)),
+              foregroundColor: AppColors.primaryLight,
+              side: const BorderSide(color: AppColors.primaryLight),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -236,13 +237,13 @@ class _PreguntaCardState extends State<_PreguntaCard> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: tieneError
-            ? const Color(0xFFFEF2F2)
+            ? AppColors.dangerSoft
             : Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: tieneError
-              ? const Color(0xFFFCA5A5)
-              : const Color(0xFFE5E7EB),
+              ? AppColors.dangerBorder
+              : AppColors.border,
         ),
       ),
       child: Column(
@@ -255,8 +256,8 @@ class _PreguntaCardState extends State<_PreguntaCard> {
               height: 22,
               decoration: BoxDecoration(
                 color: tieneError
-                    ? const Color(0xFFDC2626)
-                    : const Color(0xFF8B5CF6),
+                    ? AppColors.danger
+                    : AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Center(
@@ -274,14 +275,14 @@ class _PreguntaCardState extends State<_PreguntaCard> {
                   value: widget.pregunta.tipo,
                   isDense: true,
                   style: const TextStyle(
-                      fontSize: 12, color: Color(0xFF374151)),
+                      fontSize: 12, color: AppColors.textBody),
                   items: widget.tipos
                       .map((t) => DropdownMenuItem(
                             value: t.$1,
                             child: Row(children: [
                               Icon(t.$3,
                                   size: 14,
-                                  color: const Color(0xFF8B5CF6)),
+                                  color: AppColors.primaryLight),
                               const SizedBox(width: 6),
                               Text(t.$2),
                             ]),
@@ -307,7 +308,7 @@ class _PreguntaCardState extends State<_PreguntaCard> {
                 child: const Padding(
                   padding: EdgeInsets.all(4),
                   child: Icon(Icons.delete_outline,
-                      size: 16, color: Color(0xFFDC2626)),
+                      size: 16, color: AppColors.danger),
                 ),
               ),
           ]),
@@ -317,11 +318,11 @@ class _PreguntaCardState extends State<_PreguntaCard> {
             const SizedBox(height: 6),
             Row(children: [
               const Icon(Icons.error_outline,
-                  size: 12, color: Color(0xFFDC2626)),
+                  size: 12, color: AppColors.danger),
               const SizedBox(width: 4),
               Text(error,
                   style: const TextStyle(
-                      fontSize: 11, color: Color(0xFFDC2626))),
+                      fontSize: 11, color: AppColors.danger)),
             ]),
           ],
 
@@ -333,7 +334,7 @@ class _PreguntaCardState extends State<_PreguntaCard> {
             decoration: InputDecoration(
               hintText: 'Escribe la pregunta...',
               hintStyle: const TextStyle(
-                  color: Color(0xFF9CA3AF), fontSize: 13),
+                  color: AppColors.textSubtle, fontSize: 13),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -341,8 +342,8 @@ class _PreguntaCardState extends State<_PreguntaCard> {
                 borderSide: BorderSide(
                   color: tieneError &&
                           widget.pregunta.pregunta.trim().isEmpty
-                      ? const Color(0xFFFCA5A5)
-                      : const Color(0xFFE5E7EB),
+                      ? AppColors.dangerBorder
+                      : AppColors.border,
                 ),
               ),
               contentPadding: const EdgeInsets.symmetric(
@@ -389,7 +390,7 @@ class _PreguntaCardState extends State<_PreguntaCard> {
               label: const Text('Agregar opción',
                   style: TextStyle(fontSize: 12)),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF8B5CF6),
+                foregroundColor: AppColors.primaryLight,
                 padding: EdgeInsets.zero,
               ),
             ),
@@ -447,7 +448,7 @@ class _OpcionRowState extends State<_OpcionRow> {
               ? Icons.radio_button_unchecked_rounded
               : Icons.check_box_outline_blank_rounded,
           size: 16,
-          color: const Color(0xFF9CA3AF),
+          color: AppColors.textSubtle,
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -456,13 +457,13 @@ class _OpcionRowState extends State<_OpcionRow> {
             decoration: InputDecoration(
               hintText: 'Opción ${widget.index + 1}',
               hintStyle: const TextStyle(
-                  color: Color(0xFF9CA3AF), fontSize: 12),
+                  color: AppColors.textSubtle, fontSize: 12),
               filled: true,
-              fillColor: const Color(0xFFF9FAFB),
+              fillColor: AppColors.surfaceAlt,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
                 borderSide:
-                    const BorderSide(color: Color(0xFFE5E7EB)),
+                    const BorderSide(color: AppColors.border),
               ),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 10, vertical: 6),
@@ -478,7 +479,7 @@ class _OpcionRowState extends State<_OpcionRow> {
             child: const Padding(
               padding: EdgeInsets.all(4),
               child: Icon(Icons.close,
-                  size: 14, color: Color(0xFF9CA3AF)),
+                  size: 14, color: AppColors.textSubtle),
             ),
           ),
       ]),

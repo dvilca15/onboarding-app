@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
+import 'theme/app_theme.dart';
+import 'theme/app_toast.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
@@ -26,11 +28,7 @@ class OnboardingApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Sistema de Onboarding',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)),
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-      ),
+      theme: AppTheme.light,
       routerConfig: _router(context.read<AuthProvider>()),
     );
   }
@@ -38,6 +36,7 @@ class OnboardingApp extends StatelessWidget {
 
 GoRouter _router(AuthProvider auth) {
   return GoRouter(
+    navigatorKey: AppToast.navigatorKey,
     initialLocation: '/login',
     redirect: (context, state) async {
       final isAuthenticated = await auth.checkAuth();

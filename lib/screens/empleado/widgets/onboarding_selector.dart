@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/onboarding.dart';
+import '../../../theme/app_theme.dart';
 
 class OnboardingSelector extends StatelessWidget {
   final List<Onboarding> onboardings;
@@ -20,7 +21,7 @@ class OnboardingSelector extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -34,14 +35,14 @@ class OnboardingSelector extends StatelessWidget {
           value: seleccionado,
           isExpanded: true,
           icon: const Icon(Icons.expand_more_rounded,
-              color: Color(0xFF6B7280), size: 20),
+              color: AppColors.textMuted, size: 20),
           hint: const Text('Selecciona un plan'),
           items: onboardings.map((o) {
             final colorEstado = o.completado
-                ? const Color(0xFF10B981)
+                ? AppColors.success
                 : o.enProgreso
-                    ? const Color(0xFFF59E0B)
-                    : const Color(0xFF6B7280);
+                    ? AppColors.primary
+                    : AppColors.textMuted;
             return DropdownMenuItem<int>(
               value: o.idEmployeeOnboarding,
               child: Row(
@@ -50,7 +51,7 @@ class OnboardingSelector extends StatelessWidget {
                     child: Text(
                       o.displayPlan,
                       style: const TextStyle(
-                          fontSize: 14, color: Color(0xFF1A1A2E)),
+                          fontSize: 14, color: AppColors.text),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

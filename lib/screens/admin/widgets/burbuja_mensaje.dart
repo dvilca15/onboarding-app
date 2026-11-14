@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../models/chat_models.dart';
+import '../../../theme/app_theme.dart';
 
 class BurbujaMensaje extends StatelessWidget {
   final ChatMensaje mensaje;
   const BurbujaMensaje({super.key, required this.mensaje});
 
-  static const _morado = Color(0xFF534AB7);
-  static const _moradoClaro = Color(0xFFEEEDFE);
+  static const _morado = AppColors.primaryHover;
+  static const _moradoClaro = AppColors.primarySoft;
 
   bool get _esBot => mensaje.rol == 'assistant';
 
@@ -22,7 +23,7 @@ class BurbujaMensaje extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: _esBot ? Colors.white : _morado,
-              border: _esBot ? Border.all(color: const Color(0xFFE0DFD8), width: 0.5) : null,
+              border: _esBot ? Border.all(color: AppColors.border, width: 0.5) : null,
               borderRadius: BorderRadius.circular(16).copyWith(
                 bottomLeft: _esBot ? const Radius.circular(4) : null,
                 bottomRight: _esBot ? null : const Radius.circular(4),
@@ -33,12 +34,12 @@ class BurbujaMensaje extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13.5,
                 height: 1.5,
-                color: _esBot ? const Color(0xFF1A1A1A) : _moradoClaro,
+                color: _esBot ? AppColors.text : _moradoClaro,
               ),
             ),
           ),
           const SizedBox(height: 3),
-          Text(_horaActual(), style: const TextStyle(fontSize: 10, color: Color(0xFF888780))),
+          Text(_horaActual(), style: const TextStyle(fontSize: 10, color: AppColors.textSubtle)),
         ],
       ),
     );

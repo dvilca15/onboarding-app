@@ -9,6 +9,9 @@ import 'tabs/mi_plan_tab.dart';
 import 'tabs/inicio_tab.dart';
 import 'tabs/perfil_tab.dart';
 import 'widgets/chat_fab_empleado.dart';
+import 'package:go_router/go_router.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/app_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Breakpoint a partir del cual se muestra NavigationRail (web/tablet)
@@ -99,39 +102,134 @@ class _EmpleadoShellState extends State<EmpleadoShell> {
     );
   }
 
-  // Web / Tablet: NavigationRail lateral
+  // Web / Tablet: menú lateral (mismo lenguaje visual que el admin)
   Widget _buildWideLayout() {
+    final auth = context.watch<AuthProvider>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.bg,
       body: Row(
         children: [
-          NavigationRail(
-            selectedIndex: _tabIndex,
-            onDestinationSelected: (i) => setState(() => _tabIndex = i),
-            labelType: NavigationRailLabelType.all,
-            backgroundColor: Colors.white,
-            selectedIconTheme:
-                const IconThemeData(color: Color(0xFF1565C0)),
-            selectedLabelTextStyle: const TextStyle(
-              color: Color(0xFF1565C0),
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
+          Container(
+            width: 244,
+            decoration: const BoxDecoration(
+              color: AppColors.sidebarBg,
+              border: Border(right: BorderSide(color: AppColors.border)),
             ),
-            unselectedIconTheme:
-                const IconThemeData(color: Color(0xFF9CA3AF)),
-            unselectedLabelTextStyle: const TextStyle(
-              color: Color(0xFF9CA3AF),
-              fontSize: 12,
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                    child: Row(children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(9)),
+                        child: const Icon(Icons.rocket_launch_rounded,
+                            color: Colors.white, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text('Onboarding',
+                          style: TextStyle(
+                              color: AppColors.text,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3)),
+                    ]),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: Text('MENÚ',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.8,
+                            color: AppColors.textSubtle)),
+                  ),
+                  ..._tabs.asMap().entries.map((e) {
+                    final selected = _tabIndex == e.key;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 2),
+                      child: Material(
+                        color: selected
+                            ? AppColors.sidebarActive
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          hoverColor: AppColors.bg,
+                          onTap: () => setState(() => _tabIndex = e.key),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                            child: Row(children: [
+                              Icon(
+                                  selected
+                                      ? e.value.activeIcon
+                                      : e.value.icon,
+                                  color: selected
+                                      ? AppColors.primary
+                                      : AppColors.textMuted,
+                                  size: 19),
+                              const SizedBox(width: 12),
+                              Text(e.value.label,
+                                  style: TextStyle(
+                                      color: selected
+                                          ? AppColors.primaryHover
+                                          : AppColors.textBody,
+                                      fontSize: 14,
+                                      fontWeight: selected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500)),
+                            ]),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  const Spacer(),
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 16),
+                    child: Row(children: [
+                      InitialAvatar(auth.userName, size: 36),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(auth.userName,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.text)),
+                            const Text('Empleado',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Cerrar sesión',
+                        icon: const Icon(Icons.logout_rounded,
+                            size: 19, color: AppColors.textMuted),
+                        onPressed: () async {
+                          await context.read<AuthProvider>().logout();
+                          if (mounted) context.go('/login');
+                        },
+                      ),
+                    ]),
+                  ),
+                ],
+              ),
             ),
-            destinations: _tabs
-                .map((t) => NavigationRailDestination(
-                      icon: Icon(t.icon),
-                      selectedIcon: Icon(t.activeIcon),
-                      label: Text(t.label),
-                    ))
-                .toList(),
           ),
-          const VerticalDivider(width: 1, thickness: 1),
           Expanded(
             child: Stack(
               children: [
@@ -145,36 +243,47 @@ class _EmpleadoShellState extends State<EmpleadoShell> {
     );
   }
 
-  // Mobile: BottomNavigationBar
+  // Mobile: barra de navegación inferior
   Widget _buildMobileLayout() {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.bg,
       body: Stack(
         children: [
           _buildTabBody(),
           _buildFab(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _tabIndex,
-        onTap: (i) => setState(() => _tabIndex = i),
-        selectedItemColor: const Color(0xFF1565C0),
-        unselectedItemColor: const Color(0xFF9CA3AF),
-        selectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 11,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border)),
         ),
-        unselectedLabelStyle: const TextStyle(fontSize: 11),
-        backgroundColor: Colors.white,
-        elevation: 8,
-        type: BottomNavigationBarType.fixed,
-        items: _tabs
-            .map((t) => BottomNavigationBarItem(
-                  icon: Icon(t.icon),
-                  activeIcon: Icon(t.activeIcon),
-                  label: t.label,
-                ))
-            .toList(),
+        child: NavigationBar(
+          selectedIndex: _tabIndex,
+          onDestinationSelected: (i) => setState(() => _tabIndex = i),
+          backgroundColor: AppColors.surface,
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: AppColors.primarySoft,
+          elevation: 0,
+          height: 64,
+          labelTextStyle: WidgetStateProperty.resolveWith((states) =>
+              TextStyle(
+                fontSize: 12,
+                fontWeight: states.contains(WidgetState.selected)
+                    ? FontWeight.w600
+                    : FontWeight.w500,
+                color: states.contains(WidgetState.selected)
+                    ? AppColors.primaryHover
+                    : AppColors.textMuted,
+              )),
+          destinations: _tabs
+              .map((t) => NavigationDestination(
+                    icon: Icon(t.icon, color: AppColors.textMuted),
+                    selectedIcon:
+                        Icon(t.activeIcon, color: AppColors.primary),
+                    label: t.label,
+                  ))
+              .toList(),
+        ),
       ),
     );
   }

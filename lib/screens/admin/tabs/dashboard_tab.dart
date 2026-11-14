@@ -5,6 +5,8 @@ import '../../../models/plan.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/onboarding_card.dart';
 import '../widgets/donut_chart.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_widgets.dart';
 
 class DashboardTab extends StatelessWidget {
   final List<Usuario> usuarios;
@@ -26,36 +28,32 @@ class DashboardTab extends StatelessWidget {
     final total       = onboardings.length;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        GridView.count(
-          crossAxisCount: 4,
+        LayoutBuilder(builder: (context, c) {
+          final cols = c.maxWidth >= 900 ? 4 : (c.maxWidth >= 520 ? 2 : 1);
+          return GridView.count(
+          crossAxisCount: cols,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 1.8,
+          crossAxisSpacing: 16, mainAxisSpacing: 16,
+          mainAxisExtent: 104,
           children: [
-            StatCard(title: 'Empleados',   value: '${usuarios.length}',  icon: Icons.people_rounded,        color: const Color(0xFF1565C0)),
-            StatCard(title: 'Planes',      value: '${planes.length}',    icon: Icons.assignment_rounded,    color: const Color(0xFF7C3AED)),
-            StatCard(title: 'En Progreso', value: '$enProgreso',         icon: Icons.track_changes_rounded, color: const Color(0xFFF59E0B)),
-            StatCard(title: 'Completados', value: '$completados',        icon: Icons.check_circle_rounded,  color: const Color(0xFF10B981)),
+            StatCard(title: 'Empleados',   value: '${usuarios.length}',  icon: Icons.people_rounded,        color: AppColors.primary),
+            StatCard(title: 'Planes',      value: '${planes.length}',    icon: Icons.assignment_rounded,    color: AppColors.primary),
+            StatCard(title: 'En Progreso', value: '$enProgreso',         icon: Icons.track_changes_rounded, color: AppColors.warning),
+            StatCard(title: 'Completados', value: '$completados',        icon: Icons.check_circle_rounded,  color: AppColors.success),
           ],
-        ),
+        );
+        }),
         if (total > 0) ...[
           const SizedBox(height: 24),
-          Container(
+          AppCard(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2))],
-            ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Estado de onboardings',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A2E))),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,
+                      color: AppColors.text)),
               const SizedBox(height: 20),
               Row(children: [
                 DonutChart(
@@ -65,13 +63,13 @@ class DashboardTab extends StatelessWidget {
                 const SizedBox(width: 32),
                 Expanded(child: Column(children: [
                   LegendItem(label: 'Completados', value: completados,
-                      total: total, color: const Color(0xFF10B981)),
+                      total: total, color: AppColors.success),
                   const SizedBox(height: 12),
                   LegendItem(label: 'En progreso', value: enProgreso,
-                      total: total, color: const Color(0xFFF59E0B)),
+                      total: total, color: AppColors.warning),
                   const SizedBox(height: 12),
                   LegendItem(label: 'Pendientes',  value: pendientes,
-                      total: total, color: const Color(0xFF9CA3AF)),
+                      total: total, color: AppColors.textSubtle),
                 ])),
               ]),
             ]),
@@ -79,7 +77,10 @@ class DashboardTab extends StatelessWidget {
         ],
         const SizedBox(height: 24),
         const Text('Onboardings recientes',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.text)),
         const SizedBox(height: 12),
         ...onboardings.take(5).map((o) => OnboardingCard(onboarding: o)),
       ]),

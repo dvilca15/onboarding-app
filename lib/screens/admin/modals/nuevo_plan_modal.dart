@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../services/api_service.dart';
 import '../widgets/ui_helpers.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_dialog.dart';
 
 class NuevoPlanModal extends StatefulWidget {
   final VoidCallback onCreated;
@@ -56,50 +58,67 @@ class _NuevoPlanModalState extends State<NuevoPlanModal> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Nuevo plan de onboarding',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-      content: SizedBox(
-        width: 400,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              modalField(
-                  'Nombre del plan', _nombreCtrl, Icons.assignment_outlined,
-                  (v) => v!.isEmpty ? 'Requerido' : null),
-              const SizedBox(height: 12),
-              modalField('Descripción (opcional)', _descCtrl,
-                  Icons.notes_outlined, (_) => null,
-                  maxLines: 3),
-              const SizedBox(height: 12),
-              Row(
+    return AppDialog(
+      icon: Icons.route_rounded,
+      title: 'Nuevo plan de onboarding',
+      subtitle: 'Luego podrás agregarle etapas y tareas.',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            modalField('Nombre del plan', _nombreCtrl,
+                Icons.assignment_outlined,
+                (v) => v!.isEmpty ? 'Requerido' : null,
+                hint: 'Onboarding de ventas'),
+            const SizedBox(height: 16),
+            modalField('Descripción (opcional)', _descCtrl,
+                Icons.notes_outlined, (_) => null,
+                maxLines: 3, hint: 'Para qué puesto o área es este plan'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
                 children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Marcar como plantilla',
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text)),
+                        SizedBox(height: 2),
+                        Text('Sirve de base para crear otros planes.',
+                            style: TextStyle(
+                                fontSize: 12, color: AppColors.textMuted)),
+                      ],
+                    ),
+                  ),
                   Switch(
                     value: _esPlantilla,
                     onChanged: (v) => setState(() => _esPlantilla = v),
-                    activeColor: const Color(0xFF1565C0),
+                    activeColor: AppColors.primary,
                   ),
-                  const SizedBox(width: 8),
-                  const Text('Marcar como plantilla',
-                      style: TextStyle(fontSize: 14)),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar',
-              style: TextStyle(color: Color(0xFF6B7280))),
-        ),
-        ElevatedButton(
-          onPressed: _loading ? null : _submit,
-          style: primaryBtnStyle(),
-          child: _loading ? btnSpinner() : const Text('Crear plan'),
+        DialogCancelButton(
+            onPressed: _loading ? null : () => Navigator.pop(context)),
+        DialogPrimaryButton(
+          label: 'Crear plan',
+          loading: _loading,
+          onPressed: _submit,
         ),
       ],
     );

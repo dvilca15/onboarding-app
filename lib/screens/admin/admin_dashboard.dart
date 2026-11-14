@@ -21,6 +21,10 @@ import 'modals/asignar_plan_modal.dart';
 import 'modals/eliminar_plan_modal.dart';
 
 import 'package:file_picker/file_picker.dart';
+import '../../theme/app_theme.dart';
+import 'tabs/conocimiento_tab.dart';
+import '../../theme/app_dialog.dart';
+import '../../theme/app_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Breakpoint mobile/web para el admin (igual que el shell)
@@ -47,6 +51,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     (icon: Icons.people_rounded,        label: 'Empleados'),
     (icon: Icons.assignment_rounded,    label: 'Planes'),
     (icon: Icons.track_changes_rounded, label: 'Onboardings'),
+    (icon: Icons.auto_stories_rounded,   label: 'Conocimiento'),
   ];
 
   @override
@@ -93,7 +98,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => AlertDialog(
+        builder: (ctx, set) => AppAlertDialog(
           title: const Text('Editar empleado',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SizedBox(width: 400, child: Form(key: formKey, child: Column(
@@ -118,7 +123,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFF6B7280)))),
+                    style: TextStyle(color: AppColors.textMuted))),
             ElevatedButton(
               onPressed: loading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -188,7 +193,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => AlertDialog(
+        builder: (ctx, set) => AppAlertDialog(
           title: const Text('Editar plan',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SizedBox(width: 400, child: Form(key: formKey, child: Column(
@@ -204,7 +209,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Row(children: [
                 Switch(value: esPlantilla,
                     onChanged: (v) => set(() => esPlantilla = v),
-                    activeColor: const Color(0xFF1565C0)),
+                    activeColor: AppColors.primary),
                 const SizedBox(width: 8),
                 const Text('Marcar como plantilla',
                     style: TextStyle(fontSize: 14)),
@@ -214,7 +219,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFF6B7280)))),
+                    style: TextStyle(color: AppColors.textMuted))),
             ElevatedButton(
               onPressed: loading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -278,19 +283,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void _confirmarEliminarConAdvertencia(Plan plan, int count) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AppAlertDialog(
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded,
-                color: Color(0xFFF59E0B), size: 22),
+                color: AppColors.warning, size: 22),
             SizedBox(width: 8),
             Text('Eliminar plan',
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFDC2626))),
+                    color: AppColors.danger)),
           ],
         ),
         content: Column(
@@ -301,7 +306,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF7ED),
+                color: AppColors.warningSoft,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFFDE68A)),
               ),
@@ -327,7 +332,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               '¿Eliminar "${plan.nombre}"?\n\nSe eliminarán todos los onboardings activos y el progreso de esos empleados. Esta acción es irreversible.',
               style: const TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF374151),
+                  color: AppColors.textBody,
                   height: 1.5),
             ),
           ],
@@ -336,7 +341,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar',
-                style: TextStyle(color: Color(0xFF6B7280))),
+                style: TextStyle(color: AppColors.textMuted)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -351,7 +356,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
+              backgroundColor: AppColors.danger,
               foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -377,7 +382,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => AlertDialog(
+        builder: (ctx, set) => AppAlertDialog(
           title: Text('Nueva etapa — $nombrePlan',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SizedBox(width: 400, child: Form(key: formKey, child: Column(
@@ -412,7 +417,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFF6B7280)))),
+                    style: TextStyle(color: AppColors.textMuted))),
             ElevatedButton(
               onPressed: loading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -458,7 +463,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => AlertDialog(
+        builder: (ctx, set) => AppAlertDialog(
           title: const Text('Editar etapa',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SizedBox(width: 400, child: Form(key: formKey, child: Column(
@@ -489,7 +494,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFF6B7280)))),
+                    style: TextStyle(color: AppColors.textMuted))),
             ElevatedButton(
               onPressed: loading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -545,7 +550,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => AlertDialog(
+        builder: (ctx, set) => AppAlertDialog(
           title: const Text('Nueva tarea',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SingleChildScrollView(
@@ -558,6 +563,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   const SizedBox(height: 12),
                 ],
                 DropdownButtonFormField<String>(
+              isExpanded: true,
                   value: tipo,
                   decoration: inputDec('Tipo', Icons.category_outlined),
                   items: tipos.map((t) =>
@@ -578,7 +584,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   const SizedBox(height: 12),
                   _infoBanner(
                       'El empleado verá este mensaje al entrar por primera vez.',
-                      const Color(0xFFEDE9FE), const Color(0xFF7C3AED)),
+                      AppColors.primarySoft, AppColors.primary),
                   const SizedBox(height: 12),
                   modalField('Escribe el mensaje de bienvenida...',
                       bienvenidaCtrl, Icons.waving_hand_outlined,
@@ -612,15 +618,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   // Estado del archivo seleccionado
                   if (archivoSubido)
                     _infoBanner('Archivo cargado correctamente.',
-                        const Color(0xFFF0FDF4), const Color(0xFF16A34A))
+                        AppColors.successSoft, AppColors.success)
                   else if (archivoNombreSeleccionado != null)
                     _infoBanner(
                         'Archivo listo: $archivoNombreSeleccionado',
-                        const Color(0xFFEFF6FF), const Color(0xFF3B82F6))
+                        AppColors.infoSoft, AppColors.info)
                   else
                     _infoBanner(
                         'Opcional: sube el archivo ahora o hazlo después desde "Editar tarea".',
-                        const Color(0xFFEFF6FF), const Color(0xFF3B82F6)),
+                        AppColors.infoSoft, AppColors.info),
 
                   const SizedBox(height: 8),
 
@@ -650,8 +656,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         style: const TextStyle(fontSize: 13),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF3B82F6),
-                        side: const BorderSide(color: Color(0xFF3B82F6)),
+                        foregroundColor: AppColors.info,
+                        side: const BorderSide(color: AppColors.info),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -665,23 +671,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
+                      color: AppColors.successSoft,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFFBBF7D0)),
                     ),
                     child: Row(children: [
                       const Icon(Icons.upload_file_rounded,
-                          size: 16, color: Color(0xFF10B981)),
+                          size: 16, color: AppColors.success),
                       const SizedBox(width: 8),
                       const Expanded(child: Text(
                         '¿El empleado debe subir el documento firmado?',
                         style: TextStyle(fontSize: 13,
-                            color: Color(0xFF065F46)),
+                            color: AppColors.successDark),
                       )),
                       Switch(
                         value: requiereEntrega,
                         onChanged: (v) => set(() => requiereEntrega = v),
-                        activeColor: const Color(0xFF10B981),
+                        activeColor: AppColors.success,
                       ),
                     ]),
                   ),
@@ -702,7 +708,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancelar',
-                  style: TextStyle(color: Color(0xFF6B7280))),
+                  style: TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
               onPressed: loading ? null : () async {
@@ -816,7 +822,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => AlertDialog(
+        builder: (ctx, set) => AppAlertDialog(
           title: const Text('Editar tarea',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SingleChildScrollView(
@@ -827,6 +833,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                     (v) => v!.isEmpty ? 'Requerido' : null),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+              isExpanded: true,
                   value: tipos.contains(tipo) ? tipo : 'CONFIRMACION',
                   decoration: inputDec('Tipo', Icons.category_outlined),
                   items: tipos.map((t) =>
@@ -858,7 +865,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                 if (tipo == 'DOCUMENTO') ...[
                   if (archivoSubido)
                     _infoBanner('Archivo cargado correctamente.',
-                        const Color(0xFFF0FDF4), const Color(0xFF16A34A)),
+                        AppColors.successSoft, AppColors.success),
                   const SizedBox(height: 8),
 
                   SizedBox(
@@ -905,7 +912,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                               width: 14, height: 14,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Color(0xFF3B82F6)))
+                                  color: AppColors.info))
                           : const Icon(Icons.upload_file_outlined, size: 16),
                       label: Text(
                         archivoSubido
@@ -914,8 +921,8 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                         style: const TextStyle(fontSize: 13),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF3B82F6),
-                        side: const BorderSide(color: Color(0xFF3B82F6)),
+                        foregroundColor: AppColors.info,
+                        side: const BorderSide(color: AppColors.info),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -929,23 +936,23 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
+                      color: AppColors.successSoft,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFFBBF7D0)),
                     ),
                     child: Row(children: [
                       const Icon(Icons.upload_file_rounded,
-                          size: 16, color: Color(0xFF10B981)),
+                          size: 16, color: AppColors.success),
                       const SizedBox(width: 8),
                       const Expanded(child: Text(
                         '¿El empleado debe subir el documento firmado?',
                         style: TextStyle(fontSize: 13,
-                            color: Color(0xFF065F46)),
+                            color: AppColors.successDark),
                       )),
                       Switch(
                         value: requiereEntrega,
                         onChanged: (v) => set(() => requiereEntrega = v),
-                        activeColor: const Color(0xFF10B981),
+                        activeColor: AppColors.success,
                       ),
                     ]),
                   ),
@@ -965,7 +972,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                     Switch(
                       value: obligatorio,
                       onChanged: (v) => set(() => obligatorio = v),
-                      activeColor: const Color(0xFF1565C0),
+                      activeColor: AppColors.primary,
                     ),
                     const Text('Obligatoria',
                         style: TextStyle(fontSize: 13)),
@@ -978,7 +985,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancelar',
-                  style: TextStyle(color: Color(0xFF6B7280))),
+                  style: TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
               onPressed: loading ? null : () async {
@@ -1049,7 +1056,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => AlertDialog(
+        builder: (ctx, set) => AppAlertDialog(
           title: Text(mensajeActual == null
               ? 'Agregar bienvenida' : 'Editar bienvenida',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -1058,7 +1065,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
             children: [
               _infoBanner(
                   'El empleado verá este mensaje al entrar por primera vez.',
-                  const Color(0xFFEDE9FE), const Color(0xFF7C3AED)),
+                  AppColors.primarySoft, AppColors.primary),
               const SizedBox(height: 12),
               modalField('Escribe el mensaje de bienvenida...', ctrl,
                   Icons.waving_hand_outlined,
@@ -1068,7 +1075,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFF6B7280)))),
+                    style: TextStyle(color: AppColors.textMuted))),
             ElevatedButton(
               onPressed: loading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -1105,7 +1112,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
       builder: (ctx) => FutureBuilder<Map<String, dynamic>>(
         future: ApiService.obtenerPlan(plan.idPlan),
         builder: (ctx, snap) {
-          if (!snap.hasData) return const AlertDialog(
+          if (!snap.hasData) return const AppAlertDialog(
               content: SizedBox(height: 100,
                   child: Center(child: CircularProgressIndicator())));
           final detalle = PlanDetalle.fromJson(snap.data!);
@@ -1115,7 +1122,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
             ..sort((a, b) => a.orden.compareTo(b.orden));
           final mensajeActual = detalle.mensajeBienvenida;
 
-          return AlertDialog(
+          return AppAlertDialog(
             title: Text(detalle.nombre,
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             content: SizedBox(width: 500,
@@ -1144,18 +1151,18 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE9FE),
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFCECBF6)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           const Icon(Icons.waving_hand_rounded,
-              size: 16, color: Color(0xFF7C3AED)),
+              size: 16, color: AppColors.primary),
           const SizedBox(width: 6),
           const Expanded(child: Text('Mensaje de bienvenida',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                  color: Color(0xFF7C3AED)))),
+                  color: AppColors.primary))),
           if (mensajeActual != null) ...[
             InkWell(
               onTap: () async {
@@ -1170,7 +1177,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
               },
               child: const Padding(padding: EdgeInsets.all(4),
                   child: Icon(Icons.edit_outlined, size: 16,
-                      color: Color(0xFF7C3AED))),
+                      color: AppColors.primary)),
             ),
             const SizedBox(width: 4),
             InkWell(
@@ -1191,7 +1198,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
               },
               child: const Padding(padding: EdgeInsets.all(4),
                   child: Icon(Icons.delete_outline, size: 16,
-                      color: Color(0xFFDC2626))),
+                      color: AppColors.danger)),
             ),
           ],
         ]),
@@ -1199,7 +1206,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
         if (mensajeActual != null)
           Text(mensajeActual,
               style: const TextStyle(fontSize: 13,
-                  color: Color(0xFF374151), height: 1.5))
+                  color: AppColors.textBody, height: 1.5))
         else
           TextButton.icon(
             onPressed: () async {
@@ -1212,9 +1219,9 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                 onGuardado: () => _showPlanDetalle(plan),
               );
             },
-            icon: const Icon(Icons.add, size: 14, color: Color(0xFF7C3AED)),
+            icon: const Icon(Icons.add, size: 14, color: AppColors.primary),
             label: const Text('Agregar mensaje de bienvenida',
-                style: TextStyle(fontSize: 12, color: Color(0xFF7C3AED))),
+                style: TextStyle(fontSize: 12, color: AppColors.primary)),
             style: TextButton.styleFrom(padding: EdgeInsets.zero),
           ),
       ]),
@@ -1227,15 +1234,15 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: AppColors.surfaceAlt,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             width: 24, height: 24,
-            decoration: BoxDecoration(color: const Color(0xFF7C3AED),
+            decoration: BoxDecoration(color: AppColors.primary,
                 borderRadius: BorderRadius.circular(6)),
             child: Center(child: Text('$numero',
                 style: const TextStyle(color: Colors.white, fontSize: 12,
@@ -1254,7 +1261,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
             },
             child: const Padding(padding: EdgeInsets.all(4),
                 child: Icon(Icons.edit_outlined, size: 15,
-                    color: Color(0xFF1565C0))),
+                    color: AppColors.primary)),
           ),
           InkWell(
             onTap: () async {
@@ -1279,7 +1286,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
             },
             child: const Padding(padding: EdgeInsets.all(4),
                 child: Icon(Icons.delete_outline, size: 15,
-                    color: Color(0xFFDC2626))),
+                    color: AppColors.danger)),
           ),
           TextButton.icon(
             onPressed: () async {
@@ -1293,7 +1300,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
             icon: const Icon(Icons.add, size: 14),
             label: const Text('Tarea', style: TextStyle(fontSize: 12)),
             style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF7C3AED)),
+                foregroundColor: AppColors.primary),
           ),
         ]),
         if (s.tasks.isNotEmpty) ...[
@@ -1302,7 +1309,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
             padding: const EdgeInsets.only(left: 16, bottom: 6),
             child: Row(children: [
               const Icon(Icons.radio_button_unchecked,
-                  size: 14, color: Color(0xFF9CA3AF)),
+                  size: 14, color: AppColors.textSubtle),
               const SizedBox(width: 6),
               Expanded(child: Text(t.titulo,
                   style: const TextStyle(fontSize: 13))),
@@ -1310,7 +1317,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
+                    color: AppColors.infoSoft,
                     borderRadius: BorderRadius.circular(4)),
                 child: Text(t.tipo,
                     style: const TextStyle(fontSize: 10,
@@ -1326,7 +1333,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                 },
                 child: const Padding(padding: EdgeInsets.all(4),
                     child: Icon(Icons.edit_outlined, size: 13,
-                        color: Color(0xFF1565C0))),
+                        color: AppColors.primary)),
               ),
               InkWell(
                 onTap: () async {
@@ -1351,7 +1358,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                 },
                 child: const Padding(padding: EdgeInsets.all(4),
                     child: Icon(Icons.delete_outline, size: 13,
-                        color: Color(0xFFDC2626))),
+                        color: AppColors.danger)),
               ),
             ]),
           )),
@@ -1367,34 +1374,13 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
 
   // ── Helper genérico de confirmación ──────────────────────
 
-  void _confirmarEliminar({
+  Future<void> _confirmarEliminar({
     required String titulo,
     required String mensaje,
     required VoidCallback onConfirm,
-  }) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(titulo,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600,
-                color: Color(0xFFDC2626))),
-        content: Text(mensaje,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF374151),
-                height: 1.5)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar',
-                  style: TextStyle(color: Color(0xFF6B7280)))),
-          ElevatedButton(
-            onPressed: () { Navigator.pop(ctx); onConfirm(); },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFDC2626),
-                foregroundColor: Colors.white, elevation: 0),
-            child: const Text('Sí, eliminar'),
-          ),
-        ],
-      ),
-    );
+  }) async {
+    final ok = await confirmarAccion(context, titulo: titulo, mensaje: mensaje);
+    if (ok) onConfirm();
   }
 
   // ── Helpers de UI ─────────────────────────────────────────
@@ -1435,7 +1421,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
         Switch(
           value: obligatorio,
           onChanged: (v) => set(() => onObligatorioChanged(v)),
-          activeColor: const Color(0xFF1565C0),
+          activeColor: AppColors.primary,
         ),
         const Text('Obligatoria', style: TextStyle(fontSize: 13)),
       ]),
@@ -1462,7 +1448,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
 
   Widget _buildWideLayout(AuthProvider auth) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.bg,
       body: Stack(children: [
         Row(children: [
           _buildSidebar(auth),
@@ -1473,7 +1459,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
                 : _buildContent()),
           ])),
         ]),
-        const Positioned(bottom: 24, right: 24, child: ChatFab()),
+        Positioned(bottom: 24, right: 24, child: ChatFab(onPlanCreado: _loadData)),
       ]),
     );
   }
@@ -1482,7 +1468,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
 
   Widget _buildMobileLayout(AuthProvider auth) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.bg,
       drawer: Drawer(
         child: _buildSidebar(auth, isDrawer: true),
       ),
@@ -1493,7 +1479,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
               ? const Center(child: CircularProgressIndicator())
               : _buildContent()),
         ]),
-        const Positioned(bottom: 24, right: 24, child: ChatFab()),
+        Positioned(bottom: 24, right: 24, child: ChatFab(onPlanCreado: _loadData)),
       ]),
     );
   }
@@ -1502,87 +1488,117 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
 
   Widget _buildSidebar(AuthProvider auth, {bool isDrawer = false}) {
     return Container(
-      width: isDrawer ? double.infinity : 220,
-      color: const Color(0xFF1565C0),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(20, isDrawer ? 56 : 36, 20, 12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
+      width: isDrawer ? double.infinity : 244,
+      decoration: const BoxDecoration(
+        color: AppColors.sidebarBg,
+        border: Border(right: BorderSide(color: AppColors.border)),
+      ),
+      child: SafeArea(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            child: Row(children: [
               Container(
-                width: 36, height: 36,
+                width: 34, height: 34,
                 decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.people_alt_rounded,
-                    color: Colors.white, size: 20),
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(9)),
+                child: const Icon(Icons.rocket_launch_rounded,
+                    color: Colors.white, size: 18),
               ),
               const SizedBox(width: 10),
-              const Expanded(child: Text('Onboarding',
-                  style: TextStyle(color: Colors.white, fontSize: 16,
-                      fontWeight: FontWeight.bold))),
-            ]),
-            const SizedBox(height: 6),
-            Text(auth.userName,
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.7), fontSize: 12),
-                overflow: TextOverflow.ellipsis),
-          ]),
-        ),
-        const Divider(color: Colors.white24, height: 1),
-        const SizedBox(height: 8),
-        ..._navItems.asMap().entries.map((e) {
-          final selected = _selectedIndex == e.key;
-          return InkWell(
-            onTap: () {
-              setState(() => _selectedIndex = e.key);
-              if (isDrawer) Navigator.pop(context);
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                  color: selected
-                      ? Colors.white.withOpacity(0.15) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8)),
-              child: Row(children: [
-                Icon(e.value.icon,
-                    color: selected
-                        ? Colors.white : Colors.white.withOpacity(0.6),
-                    size: 20),
-                const SizedBox(width: 10),
-                Text(e.value.label, style: TextStyle(
-                    color: selected
-                        ? Colors.white : Colors.white.withOpacity(0.6),
-                    fontSize: 14,
-                    fontWeight: selected
-                        ? FontWeight.w600 : FontWeight.normal)),
-              ]),
-            ),
-          );
-        }),
-        const Spacer(),
-        InkWell(
-          onTap: () async {
-            await context.read<AuthProvider>().logout();
-            if (mounted) context.go('/login');
-          },
-          child: Container(
-            margin: const EdgeInsets.all(10),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(children: [
-              Icon(Icons.logout_rounded,
-                  color: Colors.white.withOpacity(0.6), size: 20),
-              const SizedBox(width: 10),
-              Text('Cerrar sesión',
+              const Text('Onboarding',
                   style: TextStyle(
-                      color: Colors.white.withOpacity(0.6), fontSize: 14)),
+                      color: AppColors.text,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3)),
             ]),
           ),
-        ),
-        const SizedBox(height: 16),
-      ]),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text('MENÚ',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8,
+                    color: AppColors.textSubtle)),
+          ),
+          ..._navItems.asMap().entries.map((e) {
+            final selected = _selectedIndex == e.key;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: Material(
+                color: selected ? AppColors.sidebarActive : Colors.transparent,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  hoverColor: AppColors.bg,
+                  onTap: () {
+                    setState(() => _selectedIndex = e.key);
+                    if (isDrawer) Navigator.pop(context);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    child: Row(children: [
+                      Icon(e.value.icon,
+                          color: selected
+                              ? AppColors.primary
+                              : AppColors.textMuted,
+                          size: 19),
+                      const SizedBox(width: 12),
+                      Text(e.value.label,
+                          style: TextStyle(
+                              color: selected
+                                  ? AppColors.primaryHover
+                                  : AppColors.textBody,
+                              fontSize: 14,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500)),
+                    ]),
+                  ),
+                ),
+              ),
+            );
+          }),
+          const Spacer(),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 8, 16),
+            child: Row(children: [
+              InitialAvatar(auth.userName, size: 36),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(auth.userName,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text)),
+                    const Text('Administrador',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Cerrar sesión',
+                icon: const Icon(Icons.logout_rounded,
+                    size: 19, color: AppColors.textMuted),
+                onPressed: () async {
+                  await context.read<AuthProvider>().logout();
+                  if (mounted) context.go('/login');
+                },
+              ),
+            ]),
+          ),
+        ]),
+      ),
     );
   }
 
@@ -1590,67 +1606,78 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
 
   Widget _buildTopBar({required bool showMenuIcon}) {
     const titles = [
-      'Dashboard', 'Empleados', 'Planes de Onboarding', 'Onboardings Activos'
+      'Dashboard', 'Empleados', 'Planes de onboarding', 'Onboardings activos',
+      'Base de conocimiento'
+    ];
+    const subtitles = [
+      'Resumen general de tu empresa',
+      'Gestiona a las personas de tu equipo',
+      'Diseña las rutas de incorporación',
+      'Seguimiento de cada empleado',
+      'Documentos que usa el asistente de IA',
     ];
     final actions = <VoidCallback?>[
-      null, _showNuevoEmpleado, _showNuevoPlan, _showAsignarPlan
+      null, _showNuevoEmpleado, _showNuevoPlan, _showAsignarPlan, null
     ];
     const labels = [
-      null, 'Nuevo empleado', 'Nuevo plan', 'Asignar plan'
+      null, 'Nuevo empleado', 'Nuevo plan', 'Asignar plan', null
     ];
     const labelsShort = [
-      null, 'Nuevo', 'Nuevo', 'Asignar'
+      null, 'Nuevo', 'Nuevo', 'Asignar', null
     ];
 
     final isWide = MediaQuery.of(context).size.width >= 600;
 
     return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB)))),
+          color: AppColors.surface,
+          border: Border(bottom: BorderSide(color: AppColors.border))),
       child: Row(children: [
         if (showMenuIcon)
           Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded,
-                  color: Color(0xFF1565C0)),
+              icon: const Icon(Icons.menu_rounded, color: AppColors.text),
               onPressed: () => Scaffold.of(ctx).openDrawer(),
               tooltip: 'Menú',
             ),
           ),
         Expanded(
-          child: Text(
-            isWide ? titles[_selectedIndex] : _shortTitle(_selectedIndex),
-            style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A2E)),
-            overflow: TextOverflow.ellipsis,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isWide ? titles[_selectedIndex] : _shortTitle(_selectedIndex),
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
+                    color: AppColors.text),
+              ),
+              if (isWide)
+                Text(subtitles[_selectedIndex],
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textMuted)),
+            ],
           ),
         ),
         IconButton(
             icon: const Icon(Icons.refresh_rounded,
-                color: Color(0xFF6B7280)),
+                color: AppColors.textMuted, size: 20),
             onPressed: _loadData,
             tooltip: 'Actualizar'),
         if (actions[_selectedIndex] != null) ...[
-          const SizedBox(width: 4),
-          isWide
-              ? ElevatedButton.icon(
-                  onPressed: actions[_selectedIndex],
-                  icon: const Icon(Icons.add, size: 18),
-                  label: Text(labels[_selectedIndex]!),
-                  style: primaryBtnStyle(),
-                )
-              : ElevatedButton.icon(
-                  onPressed: actions[_selectedIndex],
-                  icon: const Icon(Icons.add, size: 16),
-                  label: Text(labelsShort[_selectedIndex]!,
-                      style: const TextStyle(fontSize: 13)),
-                  style: primaryBtnStyle(),
-                ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: actions[_selectedIndex],
+            icon: Icon(Icons.add, size: isWide ? 18 : 16),
+            label: Text(isWide
+                ? labels[_selectedIndex]!
+                : labelsShort[_selectedIndex]!),
+          ),
         ],
       ]),
     );
@@ -1662,6 +1689,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
       case 1: return 'Empleados';
       case 2: return 'Planes';
       case 3: return 'Onboardings';
+      case 4: return 'Conocimiento';
       default: return 'Dashboard';
     }
   }
@@ -1672,14 +1700,14 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
       return Center(child: Column(
           mainAxisAlignment: MainAxisAlignment.center, children: [
         const Icon(Icons.cloud_off_rounded,
-            color: Color(0xFFDC2626), size: 48),
+            color: AppColors.danger, size: 48),
         const SizedBox(height: 16),
         const Text('Error al cargar datos',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Text(_loadError!,
             style: const TextStyle(
-                fontSize: 13, color: Color(0xFF6B7280))),
+                fontSize: 13, color: AppColors.textMuted)),
         const SizedBox(height: 20),
         ElevatedButton.icon(
             onPressed: _loadData,
@@ -1704,6 +1732,7 @@ void _showEditarTask(Task task, int idStep, VoidCallback onGuardado) {
           onEliminar: _confirmarEliminarPlan,
           onAgregarEtapa: _showNuevoStep),
       3 => OnboardingsTab(onboardings: _onboardings, onRefresh: _loadData),
+      4 => const ConocimientoTab(),
       _ => DashboardTab(
           usuarios: _usuarios,
           planes: _planes,

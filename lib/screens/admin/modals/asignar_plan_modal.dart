@@ -3,6 +3,8 @@ import '../../../models/usuario.dart';
 import '../../../models/plan.dart';
 import '../../../services/api_service.dart';
 import '../widgets/ui_helpers.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_dialog.dart';
 
 class AsignarPlanModal extends StatefulWidget {
   final List<Usuario> usuarios;
@@ -54,51 +56,18 @@ class _AsignarPlanModalState extends State<AsignarPlanModal> {
       (p) => p.idPlan == _planSeleccionado,
     );
 
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar asignación',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        content: RichText(
-          text: TextSpan(
-            style: const TextStyle(
-                fontSize: 14, color: Color(0xFF374151), height: 1.5),
-            children: [
-              const TextSpan(text: '¿Asignar el plan '),
-              TextSpan(
-                text: plan.nombre,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, color: Color(0xFF1565C0)),
-              ),
-              const TextSpan(text: ' a '),
-              TextSpan(
-                text: empleado.nombre,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const TextSpan(text: '?\n\nEsta acción no se puede deshacer.'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar',
-                style: TextStyle(color: Color(0xFF6B7280))),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1565C0),
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-            child: const Text('Sí, asignar'),
-          ),
-        ],
-      ),
+    final confirmar = await confirmarAccion(
+      context,
+      titulo: 'Confirmar asignación',
+      mensaje:
+          'Se asignará el plan «${plan.nombre}» a ${empleado.nombre}. '
+          'El empleado lo verá de inmediato en su cuenta.',
+      confirmar: 'Asignar plan',
+      destructivo: false,
+      icono: Icons.assignment_turned_in_outlined,
     );
 
-    if (confirmar != true || !mounted) return;
+    if (!confirmar || !mounted) return;
     setState(() => _loading = true);
 
     try {
@@ -121,24 +90,22 @@ class _AsignarPlanModalState extends State<AsignarPlanModal> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Asignar plan a empleado',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-      content: SizedBox(
-        width: 400,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Empleado',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF374151))),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<int>(
+    return AppDialog(
+      icon: Icons.assignment_ind_outlined,
+      title: 'Asignar plan a empleado',
+      subtitle: 'Elige a quién y qué plan de onboarding recibirá.',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FieldLabel(
+            label: 'Empleado',
+            child: DropdownButtonFormField<int>(
+              isExpanded: true,
               value: _usuarioSeleccionado,
-              decoration: inputDec('Selecciona un empleado', Icons.person_outline),
+              hint: const Text('Selecciona un empleado'),
+              icon: const Icon(Icons.expand_more_rounded,
+                  color: AppColors.textSubtle),
               items: widget.usuarios
                   .map((u) => DropdownMenuItem<int>(
                         value: u.idUser,
@@ -148,17 +115,16 @@ class _AsignarPlanModalState extends State<AsignarPlanModal> {
                   .toList(),
               onChanged: (v) => setState(() => _usuarioSeleccionado = v),
             ),
-            const SizedBox(height: 16),
-            const Text('Plan de onboarding',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF374151))),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<int>(
+          ),
+          const SizedBox(height: 16),
+          FieldLabel(
+            label: 'Plan de onboarding',
+            child: DropdownButtonFormField<int>(
+              isExpanded: true,
               value: _planSeleccionado,
-              decoration:
-                  inputDec('Selecciona un plan', Icons.assignment_outlined),
+              hint: const Text('Selecciona un plan'),
+              icon: const Icon(Icons.expand_more_rounded,
+                  color: AppColors.textSubtle),
               items: widget.planes
                   .map((p) => DropdownMenuItem<int>(
                         value: p.idPlan,
@@ -167,19 +133,16 @@ class _AsignarPlanModalState extends State<AsignarPlanModal> {
                   .toList(),
               onChanged: (v) => setState(() => _planSeleccionado = v),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar',
-              style: TextStyle(color: Color(0xFF6B7280))),
-        ),
-        ElevatedButton(
-          onPressed: _loading ? null : _confirmarYAsignar,
-          style: primaryBtnStyle(),
-          child: _loading ? btnSpinner() : const Text('Asignar plan'),
+        DialogCancelButton(
+            onPressed: _loading ? null : () => Navigator.pop(context)),
+        DialogPrimaryButton(
+          label: 'Asignar plan',
+          loading: _loading,
+          onPressed: _confirmarYAsignar,
         ),
       ],
     );

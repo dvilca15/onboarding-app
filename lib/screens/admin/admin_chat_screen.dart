@@ -4,6 +4,8 @@ import '../../models/chat_models.dart';
 import '../../services/api_service.dart';
 import 'widgets/burbuja_mensaje.dart';
 import 'widgets/tarjeta_plan.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/app_toast.dart';
 
 class AdminChatScreen extends StatefulWidget {
   const AdminChatScreen({super.key});
@@ -20,8 +22,8 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
   final List<Map<String, String>> _historial = [];
   bool _cargando = false;
 
-  static const _morado      = Color(0xFF534AB7);
-  static const _moradoClaro = Color(0xFFEEEDFE);
+  static const _morado      = AppColors.primaryHover;
+  static const _moradoClaro = AppColors.primarySoft;
 
   @override
   void initState() {
@@ -101,7 +103,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     try {
       await ApiService.chatAdminCrearPlan(sugerencia: plan.toJson());
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      AppToast.fromSnackBar(context, 
         SnackBar(
           content: Text('Plan "${plan.titulo}" creado correctamente'),
           backgroundColor: _morado,
@@ -111,10 +113,10 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      AppToast.fromSnackBar(context, 
         SnackBar(
           content: Text('Error al crear el plan: ${e.toString().replaceAll('Exception: ', '')}'),
-          backgroundColor: const Color(0xFFDC2626),
+          backgroundColor: AppColors.danger,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
@@ -137,7 +139,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 0,
-        leading: const BackButton(color: Color(0xFF1A1A1A)),
+        leading: const BackButton(color: AppColors.text),
         title: Row(
           children: [
             CircleAvatar(
@@ -152,9 +154,9 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
               children: const [
                 Text('Asistente de planes',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A1A))),
+                        color: AppColors.text)),
                 Text('Describe el perfil del empleado',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF888780))),
+                    style: TextStyle(fontSize: 11, color: AppColors.textSubtle)),
               ],
             ),
           ],
@@ -172,7 +174,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(0.5),
-          child: Container(height: 0.5, color: const Color(0xFFE0DFD8)),
+          child: Container(height: 0.5, color: AppColors.border),
         ),
       ),
       body: Column(
@@ -207,7 +209,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             decoration: const BoxDecoration(
               color: Colors.white,
-              border: Border(top: BorderSide(color: Color(0xFFE0DFD8), width: 0.5)),
+              border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -221,9 +223,9 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                     decoration: InputDecoration(
                       hintText: 'Describe el perfil del empleado...',
                       hintStyle:
-                          const TextStyle(color: Color(0xFF888780), fontSize: 14),
+                          const TextStyle(color: AppColors.textSubtle, fontSize: 14),
                       filled: true,
-                      fillColor: const Color(0xFFF5F4EE),
+                      fillColor: AppColors.bg,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -240,7 +242,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: _cargando ? const Color(0xFFAFA9EC) : _morado,
+                      color: _cargando ? AppColors.primaryBorder : _morado,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.send_rounded,
@@ -291,7 +293,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           color: Colors.white,
           borderRadius: BorderRadius.circular(16)
               .copyWith(bottomLeft: const Radius.circular(4)),
-          border: Border.all(color: const Color(0xFFE0DFD8), width: 0.5),
+          border: Border.all(color: AppColors.border, width: 0.5),
         ),
         child: AnimatedBuilder(
           animation: _anim,
@@ -305,7 +307,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
                 height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF888780).withOpacity(opacity),
+                  color: AppColors.textSubtle.withOpacity(opacity),
                 ),
               );
             }),

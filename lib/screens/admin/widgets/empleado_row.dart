@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/usuario.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_widgets.dart';
 
 class EmpleadoRow extends StatelessWidget {
   final Usuario usuario;
@@ -16,9 +18,9 @@ class EmpleadoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6))),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -27,23 +29,15 @@ class EmpleadoRow extends StatelessWidget {
             flex: 3,
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: const Color(0xFF1565C0).withOpacity(0.1),
-                  child: Text(
-                    usuario.inicial,
-                    style: const TextStyle(
-                      color: Color(0xFF1565C0),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
+                InitialAvatar(usuario.nombre),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     usuario.nombre,
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -56,7 +50,7 @@ class EmpleadoRow extends StatelessWidget {
             flex: 4,
             child: Text(
               usuario.email,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -69,24 +63,10 @@ class EmpleadoRow extends StatelessWidget {
               runSpacing: 4,
               children: usuario.roles.map((r) {
                 final esAdmin = r == 'ADMIN_EMPRESA';
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: esAdmin
-                        ? const Color(0xFFEDE9FE)
-                        : const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    r,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: esAdmin
-                          ? const Color(0xFF7C3AED)
-                          : const Color(0xFF0369A1),
-                    ),
-                  ),
+                return StatusBadge(
+                  esAdmin ? 'Administrador' : 'Empleado',
+                  tone: esAdmin ? BadgeTone.primary : BadgeTone.neutral,
+                  dot: false,
                 );
               }).toList(),
             ),
@@ -97,12 +77,12 @@ class EmpleadoRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF6B7280)),
+                icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.textMuted),
                 tooltip: 'Editar',
                 onPressed: onEditar,
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFDC2626)),
+                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
                 tooltip: 'Eliminar',
                 onPressed: onEliminar,
               ),

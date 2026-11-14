@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import '../../../theme/app_theme.dart';
 
 class DonutChart extends StatelessWidget {
   final int completados;
@@ -35,12 +36,12 @@ class DonutChart extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
+                  color: AppColors.text,
                 ),
               ),
               const Text(
                 'total',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
             ],
           ),
@@ -78,14 +79,14 @@ class _DonutPainter extends CustomPainter {
     const startAngle = -math.pi / 2;
     const totalAngle = 2 * math.pi;
 
-    paint.color = const Color(0xFFF3F4F6);
+    paint.color = AppColors.bg;
     canvas.drawCircle(center, radius, paint);
 
     double currentAngle = startAngle;
     final segments = [
-      (completados, const Color(0xFF10B981)),
-      (enProgreso, const Color(0xFFF59E0B)),
-      (pendientes, const Color(0xFFE5E7EB)),
+      (completados, AppColors.success),
+      (enProgreso, AppColors.warning),
+      (pendientes, AppColors.border),
     ];
 
     for (final seg in segments) {
@@ -142,7 +143,7 @@ class LegendItem extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            style: const TextStyle(fontSize: 13, color: AppColors.textBody),
           ),
         ),
         Text(
@@ -150,7 +151,7 @@ class LegendItem extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1A1A2E),
+            color: AppColors.text,
           ),
         ),
       ],

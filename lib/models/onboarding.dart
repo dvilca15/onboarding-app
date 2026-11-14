@@ -145,6 +145,8 @@ class StepConProgreso {
   final List<TaskProgressDetalle> tasks;
   final int totalTasks;
   final int completadas;
+  final bool bloqueada;       // el empleado debe superar una etapa anterior
+  final String? bloqueadaPor; // título de esa etapa
 
   const StepConProgreso({
     required this.idStep,
@@ -155,6 +157,8 @@ class StepConProgreso {
     this.tasks = const [],
     this.totalTasks = 0,
     this.completadas = 0,
+    this.bloqueada = false,
+    this.bloqueadaPor,
   });
 
   factory StepConProgreso.fromJson(Map<String, dynamic> json) =>
@@ -169,6 +173,8 @@ class StepConProgreso {
             .toList(),
         totalTasks: json['total_tasks'] as int? ?? 0,
         completadas: json['completadas'] as int? ?? 0,
+        bloqueada: json['bloqueada'] as bool? ?? false,
+        bloqueadaPor: json['bloqueada_por'] as String?,
       );
 
   bool get todoCompleto => totalTasks > 0 && completadas == totalTasks;

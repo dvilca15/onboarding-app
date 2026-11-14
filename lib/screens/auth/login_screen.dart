@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/app_toast.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,9 +46,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (error != null) {
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      AppToast.fromSnackBar(context, SnackBar(
         content: Text(error),
-        backgroundColor: const Color(0xFFDC2626),
+        backgroundColor: AppColors.danger,
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -58,9 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
       await auth.logout();
       setState(() => _loading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        AppToast.fromSnackBar(context, const SnackBar(
           content: Text('No tienes permisos de administrador'),
-          backgroundColor: Color(0xFFDC2626),
+          backgroundColor: AppColors.danger,
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -77,302 +79,286 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorRol = _rolSeleccionado == 'ADMIN_EMPRESA'
-        ? const Color(0xFF7C3AED)
-        : const Color(0xFF1565C0);
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // ── Ícono animado por rol ───────────────────────
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: colorRol,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorRol.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  _rolActual['icon'] as IconData,
-                  color: Colors.white,
-                  size: 40,
+      backgroundColor: AppColors.surface,
+      body: LayoutBuilder(builder: (context, c) {
+        final wide = c.maxWidth >= 900;
+        return Row(children: [
+          if (wide) const Expanded(flex: 5, child: _BrandPanel()),
+          Expanded(
+            flex: 4,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 32),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: _buildForm(showLogo: !wide),
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // ── Título ──────────────────────────────────────
-              const Text(
-                'Sistema de Onboarding',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-              const SizedBox(height: 6),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Text(
-                  'Ingresa como ${_rolActual['label']}',
-                  key: ValueKey(_rolSeleccionado),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colorRol,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // ── Card del formulario ─────────────────────────
-              Container(
-                width: 400,
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                      // ── Selector de rol (toggle) ────────────
-                      const Text(
-                        'Ingresar como',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: colorRol.withOpacity(0.4), width: 1.5),
-                          color: colorRol.withOpacity(0.04),
-                        ),
-                        child: Row(
-                          children: _roles.map((rol) {
-                            final isSelected =
-                                _rolSeleccionado == rol['value'];
-                            return Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() =>
-                                    _rolSeleccionado = rol['value'] as String),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 11, horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? colorRol
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        rol['icon'] as IconData,
-                                        size: 16,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : const Color(0xFF6B7280),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        rol['label'] as String,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: isSelected
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                          color: isSelected
-                                              ? Colors.white
-                                              : const Color(0xFF6B7280),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // ── Email ───────────────────────────────
-                      const Text(
-                        'Correo electrónico',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: _inputDec(
-                          'correo@empresa.com',
-                          Icons.email_outlined,
-                          colorRol,
-                        ),
-                        validator: (v) {
-                          if (v!.isEmpty) return 'Requerido';
-                          if (!v.contains('@')) return 'Email inválido';
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // ── Contraseña ──────────────────────────
-                      const Text(
-                        'Contraseña',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _passCtrl,
-                        obscureText: _obscure,
-                        decoration: _inputDec(
-                          '••••••••',
-                          Icons.lock_outline,
-                          colorRol,
-                        ).copyWith(
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              color: const Color(0xFF9CA3AF),
-                              size: 20,
-                            ),
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
-                          ),
-                        ),
-                        validator: (v) {
-                          if (v!.isEmpty) return 'Requerido';
-                          if (v.length < 6) return 'Mínimo 6 caracteres';
-                          return null;
-                        },
-                        onFieldSubmitted: (_) => _login(),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // ── Botón login ─────────────────────────
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          child: ElevatedButton(
-                            onPressed: _loading ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorRol,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: _loading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
-                                : Text(
-                                    'Ingresar como ${_rolActual['label']}',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-              const Text(
-                'Sistema de Onboarding para Mipymes',
-                style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-              ),
-            ],
+            ),
           ),
+        ]);
+      }),
+    );
+  }
+
+  Widget _buildForm({required bool showLogo}) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (showLogo) ...[
+            const _LogoMark(),
+            const SizedBox(height: 32),
+          ],
+          const Text('Bienvenido de nuevo',
+              style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
+                  color: AppColors.text)),
+          const SizedBox(height: 6),
+          const Text('Ingresa tus credenciales para continuar.',
+              style: TextStyle(fontSize: 14, color: AppColors.textMuted)),
+          const SizedBox(height: 28),
+
+          // ── Selector de rol (segmented) ───────────────────
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppColors.bg,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: _roles.map((rol) {
+                final selected = _rolSeleccionado == rol['value'];
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(
+                        () => _rolSeleccionado = rol['value'] as String),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color:
+                            selected ? AppColors.surface : Colors.transparent,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        boxShadow: selected ? kShadowSm : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(rol['icon'] as IconData,
+                              size: 16,
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.textMuted),
+                          const SizedBox(width: 6),
+                          Text(rol['label'] as String,
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: selected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: selected
+                                      ? AppColors.text
+                                      : AppColors.textMuted)),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 22),
+
+          const _FieldLabel('Correo electrónico'),
+          TextFormField(
+            controller: _emailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              hintText: 'nombre@empresa.com',
+              prefixIcon: Icon(Icons.mail_outline_rounded,
+                  size: 20, color: AppColors.textSubtle),
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Requerido';
+              if (!v.contains('@')) return 'Email inválido';
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          const _FieldLabel('Contraseña'),
+          TextFormField(
+            controller: _passCtrl,
+            obscureText: _obscure,
+            decoration: InputDecoration(
+              hintText: '••••••••',
+              prefixIcon: const Icon(Icons.lock_outline_rounded,
+                  size: 20, color: AppColors.textSubtle),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: AppColors.textSubtle,
+                  size: 20,
+                ),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Requerido';
+              if (v.length < 6) return 'Mínimo 6 caracteres';
+              return null;
+            },
+            onFieldSubmitted: (_) => _login(),
+          ),
+          const SizedBox(height: 28),
+
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _loading ? null : _login,
+              child: _loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2.5))
+                  : Text('Ingresar como ${_rolActual['label']}',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  final String text;
+  const _FieldLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(text,
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textBody)),
+      );
+}
+
+class _LogoMark extends StatelessWidget {
+  final bool onDark;
+  const _LogoMark({this.onDark = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: onDark ? Colors.white : AppColors.primary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(Icons.rocket_launch_rounded,
+            size: 20, color: onDark ? AppColors.primary : Colors.white),
+      ),
+      const SizedBox(width: 10),
+      Text('Onboarding',
+          style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+              color: onDark ? Colors.white : AppColors.text)),
+    ]);
+  }
+}
+
+/// Panel izquierdo de marca (solo en pantallas anchas).
+class _BrandPanel extends StatelessWidget {
+  const _BrandPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF134E4A), AppColors.primaryHover, AppColors.primary],
         ),
       ),
+      padding: const EdgeInsets.all(56),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _LogoMark(onDark: true),
+          const Spacer(),
+          const Text('Incorpora a tu equipo\nsin fricción.',
+              style: TextStyle(
+                  fontSize: 40,
+                  height: 1.15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -1,
+                  color: Colors.white)),
+          const SizedBox(height: 16),
+          Text(
+              'Planes de inducción, seguimiento del progreso y un asistente '
+              'con IA para que cada nuevo empleado arranque con claridad.',
+              style: TextStyle(
+                  fontSize: 16,
+                  height: 1.55,
+                  color: Colors.white.withValues(alpha: 0.78))),
+          const SizedBox(height: 36),
+          const _Feature(Icons.checklist_rounded, 'Planes por etapas y tareas'),
+          const SizedBox(height: 14),
+          const _Feature(Icons.insights_rounded, 'Progreso en tiempo real'),
+          const SizedBox(height: 14),
+          const _Feature(Icons.auto_awesome_rounded, 'Asistente con IA integrado'),
+          const Spacer(),
+          Text('Sistema de Onboarding para Mipymes',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.55))),
+        ],
+      ),
     );
   }
+}
 
-  InputDecoration _inputDec(String hint, IconData icon, Color color) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFD1D5DB), fontSize: 14),
-      prefixIcon: Icon(icon, color: const Color(0xFF9CA3AF), size: 20),
-      filled: true,
-      fillColor: const Color(0xFFF9FAFB),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: color, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFDC2626)),
-      ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    );
-  }
+class _Feature extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _Feature(this.icon, this.text);
+
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 17, color: Colors.white),
+        ),
+        const SizedBox(width: 12),
+        Text(text,
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white)),
+      ]);
 }

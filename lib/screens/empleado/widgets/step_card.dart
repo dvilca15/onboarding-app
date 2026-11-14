@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/onboarding.dart';
 import 'task_row.dart';
+import '../../../theme/app_theme.dart';
 
 class StepCard extends StatelessWidget {
   final StepConProgreso step;
@@ -25,25 +26,28 @@ class StepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bloqueada = step.bloqueada;
     final colorStep = step.todoCompleto
-        ? const Color(0xFF10B981)
+        ? AppColors.success
         : step.enProgreso
-            ? const Color(0xFFF59E0B)
-            : const Color(0xFF9CA3AF);
+            ? AppColors.primary
+            : AppColors.textSubtle;
 
-    return Container(
+    return Opacity(
+      opacity: bloqueada ? 0.6 : 1,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bloqueada ? AppColors.surfaceAlt : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: step.todoCompleto
-              ? const Color(0xFF10B981).withOpacity(0.3)
-              : const Color(0xFFE5E7EB),
+              ? AppColors.success.withOpacity(0.3)
+              : AppColors.border,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: const Color(0x0F1C1917),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -53,7 +57,7 @@ class StepCard extends StatelessWidget {
         children: [
           // ── Cabecera ──────────────────────────────────────
           InkWell(
-            onTap: onToggle,
+            onTap: bloqueada ? null : onToggle,
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -63,12 +67,15 @@ class StepCard extends StatelessWidget {
                     width: 36, height: 36,
                     decoration: BoxDecoration(
                       color: step.todoCompleto
-                          ? const Color(0xFF10B981)
+                          ? AppColors.success
                           : colorStep.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
-                      child: step.todoCompleto
+                      child: bloqueada
+                          ? const Icon(Icons.lock_rounded,
+                              color: AppColors.textSubtle, size: 18)
+                          : step.todoCompleto
                           ? const Icon(Icons.check_rounded,
                               color: Colors.white, size: 20)
                           : Text('$numero',
@@ -88,13 +95,22 @@ class StepCard extends StatelessWidget {
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: step.todoCompleto
-                                  ? const Color(0xFF6B7280)
-                                  : const Color(0xFF1A1A2E),
+                                  ? AppColors.textMuted
+                                  : AppColors.text,
                               decoration: step.todoCompleto
                                   ? TextDecoration.lineThrough
                                   : null,
                             )),
                         const SizedBox(height: 2),
+                        if (bloqueada)
+                          Text(
+                            step.bloqueadaPor != null
+                                ? 'Completa «${step.bloqueadaPor}» para desbloquear'
+                                : 'Completa la etapa anterior para desbloquear',
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColors.textSubtle),
+                          )
+                        else
                         Row(children: [
                           Text('${step.completadas}/${step.totalTasks} tareas',
                               style: TextStyle(
@@ -104,15 +120,19 @@ class StepCard extends StatelessWidget {
                           if (step.duracionDias != null) ...[
                             const Text(' · ',
                                 style: TextStyle(
-                                    color: Color(0xFF9CA3AF), fontSize: 12)),
+                                    color: AppColors.textSubtle, fontSize: 12)),
                             Text('${step.duracionDias} días',
                                 style: const TextStyle(
-                                    fontSize: 12, color: Color(0xFF9CA3AF))),
+                                    fontSize: 12, color: AppColors.textSubtle)),
                           ],
                         ]),
                       ],
                     ),
                   ),
+                  if (bloqueada)
+                    const Icon(Icons.lock_outline_rounded,
+                        color: AppColors.textSubtle, size: 20)
+                  else
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -126,7 +146,7 @@ class StepCard extends StatelessWidget {
                         expandido
                             ? Icons.expand_less_rounded
                             : Icons.expand_more_rounded,
-                        color: const Color(0xFF9CA3AF), size: 20,
+                        color: AppColors.textSubtle, size: 20,
                       ),
                     ],
                   ),
@@ -136,7 +156,7 @@ class StepCard extends StatelessWidget {
           ),
 
           // ── Barra de progreso ─────────────────────────────
-          if (step.totalTasks > 0)
+          if (step.totalTasks > 0 && !bloqueada)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ClipRRect(
@@ -145,7 +165,7 @@ class StepCard extends StatelessWidget {
                   value: step.totalTasks > 0
                       ? step.completadas / step.totalTasks
                       : 0,
-                  backgroundColor: const Color(0xFFF3F4F6),
+                  backgroundColor: AppColors.bg,
                   valueColor: AlwaysStoppedAnimation<Color>(colorStep),
                   minHeight: 4,
                 ),
@@ -154,6 +174,7 @@ class StepCard extends StatelessWidget {
 
           // ── Descripción ───────────────────────────────────
           if (expandido &&
+              !bloqueada &&
               step.descripcion != null &&
               step.descripcion!.isNotEmpty)
             Padding(
@@ -161,20 +182,20 @@ class StepCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
+                  color: AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(step.descripcion!,
                     style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF6B7280))),
+                        fontSize: 13, color: AppColors.textMuted)),
               ),
             ),
 
           // ── Lista de tasks ────────────────────────────────
-          if (expandido && step.tasks.isNotEmpty) ...[
+          if (expandido && !bloqueada && step.tasks.isNotEmpty) ...[
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Divider(height: 1, color: Color(0xFFF3F4F6)),
+              child: Divider(height: 1, color: AppColors.bg),
             ),
             ...step.tasks.map((t) => TaskRow(
                   task: t,
@@ -184,16 +205,17 @@ class StepCard extends StatelessWidget {
                 )),
           ],
 
-          if (expandido && step.tasks.isEmpty)
+          if (expandido && !bloqueada && step.tasks.isEmpty)
             const Padding(
               padding: EdgeInsets.all(16),
               child: Text('Esta etapa no tiene tareas.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+                  style: TextStyle(fontSize: 13, color: AppColors.textSubtle)),
             ),
 
           const SizedBox(height: 4),
         ],
       ),
+    ),
     );
   }
 }

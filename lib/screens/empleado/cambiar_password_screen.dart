@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────
 // CambiarPasswordScreen
@@ -34,7 +35,7 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
   bool _guardando    = false;
   String? _errorApi;
 
-  static const _azul = Color(0xFF1565C0);
+  static const _azul = AppColors.primary;
 
   @override
   void dispose() {
@@ -81,7 +82,7 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
   Widget build(BuildContext context) {
     final userName = context.read<AuthProvider>().userName;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.bg,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -120,14 +121,14 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
           style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A2E)),
+              color: AppColors.text),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         const Text(
           'Por seguridad, debes cambiar tu contraseña\nantes de continuar.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+          style: TextStyle(fontSize: 14, color: AppColors.textMuted),
         ),
       ],
     );
@@ -138,7 +139,7 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -242,16 +243,16 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle:
-            const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            const TextStyle(fontSize: 13, color: AppColors.textMuted),
         filled: true,
-        fillColor: const Color(0xFFF9F9F9),
+        fillColor: AppColors.surfaceAlt,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -260,7 +261,7 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
         suffixIcon: IconButton(
           icon: Icon(
             verTexto ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-            color: const Color(0xFF9CA3AF),
+            color: AppColors.textSubtle,
             size: 20,
           ),
           onPressed: onToggleVer,
@@ -276,20 +277,20 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEE2E2),
+        color: AppColors.dangerSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFCA5A5)),
+        border: Border.all(color: AppColors.dangerBorder),
       ),
       child: Row(
         children: [
           const Icon(Icons.error_outline,
-              color: Color(0xFFDC2626), size: 18),
+              color: AppColors.danger, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               mensaje,
               style: const TextStyle(
-                  color: Color(0xFFDC2626), fontSize: 13),
+                  color: AppColors.danger, fontSize: 13),
             ),
           ),
         ],

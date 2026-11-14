@@ -7,6 +7,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../models/onboarding.dart';
 import '../../../services/api_service.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_dialog.dart';
+import '../../../theme/app_toast.dart';
 
 // ── Modelo de pregunta ────────────────────────────────────────
 
@@ -84,7 +87,7 @@ class TaskRow extends StatelessWidget {
     this.onEnviarFormulario,
   });
 
-  static const _baseUrl = 'http://localhost:8000';
+  static const _baseUrl = ApiService.baseUrl;
 
   void _abrirContenido(BuildContext context, String url) async {
     String fullUrl = url;
@@ -95,7 +98,7 @@ class TaskRow extends StatelessWidget {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        AppToast.fromSnackBar(context, 
           const SnackBar(content: Text('No se pudo abrir el contenido')),
         );
       }
@@ -134,7 +137,7 @@ class TaskRow extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 child: Column(children: [
                   const Icon(Icons.play_circle_outline_rounded,
-                      size: 48, color: Color(0xFFF97316)),
+                      size: 48, color: AppColors.warning),
                   const SizedBox(height: 12),
                   const Text('Este video no se puede mostrar aquí.',
                       style: TextStyle(fontSize: 14,
@@ -145,7 +148,7 @@ class TaskRow extends StatelessWidget {
                     icon: const Icon(Icons.open_in_new, size: 16),
                     label: const Text('Abrir video'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF97316),
+                      backgroundColor: AppColors.warning,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -162,13 +165,13 @@ class TaskRow extends StatelessWidget {
                   TextButton(
                     onPressed: () => Navigator.pop(ctx),
                     child: const Text('Cancelar',
-                        style: TextStyle(color: Color(0xFF6B7280))),
+                        style: TextStyle(color: AppColors.textMuted)),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () { Navigator.pop(ctx); onCompletar(); },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF97316),
+                      backgroundColor: AppColors.warning,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -247,10 +250,10 @@ class TaskRow extends StatelessWidget {
               width: 24, height: 24,
               decoration: BoxDecoration(
                 color: task.completada
-                    ? const Color(0xFF10B981) : Colors.transparent,
+                    ? AppColors.success : Colors.transparent,
                 border: Border.all(
                   color: task.completada
-                      ? const Color(0xFF10B981) : const Color(0xFFD1D5DB),
+                      ? AppColors.success : AppColors.borderStrong,
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(6),
@@ -268,8 +271,8 @@ class TaskRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13, fontWeight: FontWeight.w500,
                     color: task.completada
-                        ? const Color(0xFF9CA3AF)
-                        : const Color(0xFF1A1A2E),
+                        ? AppColors.textSubtle
+                        : AppColors.text,
                     decoration: task.completada
                         ? TextDecoration.lineThrough : null,
                   )),
@@ -281,7 +284,7 @@ class TaskRow extends StatelessWidget {
                   const SizedBox(width: 6),
                   const Text('Obligatoria',
                       style: TextStyle(fontSize: 10,
-                          color: Color(0xFFDC2626),
+                          color: AppColors.danger,
                           fontWeight: FontWeight.w500)),
                 ],
               ]),
@@ -300,7 +303,7 @@ class TaskRow extends StatelessWidget {
           _botonSecundario(
             icono: Icons.picture_as_pdf_outlined,
             label: 'Ver documento',
-            color: const Color(0xFF3B82F6),
+            color: AppColors.info,
             onTap: () => _abrirContenido(context, task.urlContenido!),
             visible: !task.completada,
           ),
@@ -311,7 +314,7 @@ class TaskRow extends StatelessWidget {
             _botonSecundario(
               icono: Icons.picture_as_pdf_outlined,
               label: 'Ver documento a firmar',
-              color: const Color(0xFF3B82F6),
+              color: AppColors.info,
               onTap: () => _abrirContenido(context, task.urlContenido!),
               visible: true,
             ),
@@ -320,7 +323,7 @@ class TaskRow extends StatelessWidget {
               icono: Icons.upload_file_rounded,
               label: task.urlEntrega != null
                   ? 'Reemplazar entrega' : 'Subir documento firmado',
-              color: const Color(0xFF10B981),
+              color: AppColors.success,
               onTap: () => _mostrarEntrega(context),
               visible: true,
             ),
@@ -329,7 +332,7 @@ class TaskRow extends StatelessWidget {
             _botonSecundario(
               icono: Icons.attach_file_rounded,
               label: 'Ver mi entrega',
-              color: const Color(0xFF10B981),
+              color: AppColors.success,
               onTap: () => _abrirContenido(context, task.urlEntrega!),
               visible: true,
             ),
@@ -344,7 +347,7 @@ class TaskRow extends StatelessWidget {
             padding: const EdgeInsets.only(left: 34, top: 4),
             child: Text('El administrador aún no ha cargado el documento.',
                 style: const TextStyle(
-                    fontSize: 11, color: Color(0xFF9CA3AF))),
+                    fontSize: 11, color: AppColors.textSubtle)),
           ),
 
         if (!task.completada &&
@@ -354,7 +357,7 @@ class TaskRow extends StatelessWidget {
             padding: const EdgeInsets.only(left: 34, top: 4),
             child: Text('El administrador aún no ha cargado el video.',
                 style: const TextStyle(
-                    fontSize: 11, color: Color(0xFF9CA3AF))),
+                    fontSize: 11, color: AppColors.textSubtle)),
           ),
       ]),
     );
@@ -391,7 +394,7 @@ class TaskRow extends StatelessWidget {
         return TextButton(
           onPressed: () => _mostrarFormulario(context),
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF8B5CF6),
+            foregroundColor: AppColors.primaryLight,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           ),
           child: const Text('Responder', style: TextStyle(fontSize: 12)),
@@ -403,8 +406,8 @@ class TaskRow extends StatelessWidget {
             onPressed: task.urlEntrega != null ? onCompletar : null,
             style: TextButton.styleFrom(
               foregroundColor: task.urlEntrega != null
-                  ? const Color(0xFF10B981)
-                  : const Color(0xFF9CA3AF),
+                  ? AppColors.success
+                  : AppColors.textSubtle,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             ),
             child: const Text('Confirmar entrega',
@@ -419,7 +422,7 @@ class TaskRow extends StatelessWidget {
             Future.delayed(const Duration(seconds: 2), onCompletar);
           },
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF3B82F6),
+            foregroundColor: AppColors.info,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           ),
           child: const Text('Confirmar lectura',
@@ -429,7 +432,7 @@ class TaskRow extends StatelessWidget {
         return TextButton(
           onPressed: () => _mostrarVideo(context),
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFFF97316),
+            foregroundColor: AppColors.warning,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           ),
           child: const Text('Ver video', style: TextStyle(fontSize: 12)),
@@ -438,7 +441,7 @@ class TaskRow extends StatelessWidget {
         return TextButton(
           onPressed: onCompletar,
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF1565C0),
+            foregroundColor: AppColors.primary,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           ),
           child: const Text('Completar', style: TextStyle(fontSize: 12)),
@@ -492,8 +495,6 @@ class _EntregaDialogState extends State<_EntregaDialog> {
   String? _error;
   String? _nombreArchivo;
 
-  static const _verde = Color(0xFF10B981);
-
   Future<void> _seleccionarYSubir() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -523,130 +524,79 @@ class _EntregaDialogState extends State<_EntregaDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16)),
-      title: Row(children: [
-        const Icon(Icons.upload_file_rounded, color: _verde, size: 22),
-        const SizedBox(width: 8),
-        Expanded(child: Text(widget.task.titulo,
-            style: const TextStyle(fontSize: 16))),
-      ]),
-      content: SizedBox(
-        width: 420,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          // Instrucción
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFBFDBFE)),
-            ),
-            child: const Row(children: [
-              Icon(Icons.info_outline, size: 14, color: Color(0xFF3B82F6)),
-              SizedBox(width: 8),
-              Expanded(child: Text(
-                'Descarga el documento, fírmalo y súbelo aquí.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF1E40AF)),
-              )),
-            ]),
-          ),
-          const SizedBox(height: 14),
+    return AppDialog(
+      icon: Icons.upload_file_rounded,
+      title: 'Entrega de documento',
+      subtitle: widget.task.titulo,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Pasos
+          const _PasoEntrega(
+              numero: 1, texto: 'Descarga el documento de la tarea.'),
+          const SizedBox(height: 8),
+          const _PasoEntrega(numero: 2, texto: 'Revísalo y fírmalo.'),
+          const SizedBox(height: 8),
+          const _PasoEntrega(
+              numero: 3, texto: 'Sube aquí el archivo firmado.'),
+          const SizedBox(height: 18),
 
-          // Error
           if (_error != null) ...[
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEE2E2),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFCA5A5)),
-              ),
-              child: Row(children: [
-                const Icon(Icons.error_outline,
-                    size: 14, color: Color(0xFFDC2626)),
-                const SizedBox(width: 8),
-                Expanded(child: Text(_error!,
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFFDC2626)))),
-              ]),
-            ),
-            const SizedBox(height: 12),
+            InlineBanner(_error!, tone: BannerTone.error),
+            const SizedBox(height: 14),
           ],
 
-          // Archivo subido
-          if (_nombreArchivo != null) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBBF7D0)),
-              ),
-              child: Row(children: [
-                const Icon(Icons.check_circle_rounded,
-                    size: 16, color: _verde),
-                const SizedBox(width: 8),
-                Expanded(child: Text(_nombreArchivo!,
-                    style: const TextStyle(fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF065F46)))),
-              ]),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Botón subir
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _subiendo ? null : _seleccionarYSubir,
-              icon: _subiendo
-                  ? const SizedBox(width: 14, height: 14,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: _verde))
-                  : const Icon(Icons.upload_file_rounded, size: 18),
-              label: Text(
-                _nombreArchivo != null
-                    ? 'Reemplazar archivo'
-                    : 'Seleccionar archivo firmado',
-                style: const TextStyle(fontSize: 13),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _verde,
-                side: const BorderSide(color: _verde),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
+          FileDropZone(
+            onTap: _seleccionarYSubir,
+            uploading: _subiendo,
+            fileName: _nombreArchivo,
+            hint: 'PDF, PNG o JPG',
+            emptyLabel: 'Seleccionar archivo firmado',
           ),
-          const SizedBox(height: 6),
-          const Text('PDF, PNG o JPG',
-              style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
-              textAlign: TextAlign.center),
-        ]),
+        ],
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar',
-              style: TextStyle(color: Color(0xFF6B7280))),
-        ),
-        ElevatedButton(
-          onPressed: _nombreArchivo == null ? null : widget.onEntregado,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _verde,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8)),
-          ),
-          child: const Text('Confirmar entrega'),
+        const DialogCancelButton(),
+        DialogPrimaryButton(
+          label: 'Confirmar entrega',
+          icon: Icons.check_rounded,
+          onPressed: _nombreArchivo == null || _subiendo
+              ? null
+              : widget.onEntregado,
         ),
       ],
     );
+  }
+}
+
+class _PasoEntrega extends StatelessWidget {
+  final int numero;
+  final String texto;
+  const _PasoEntrega({required this.numero, required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Container(
+        width: 22,
+        height: 22,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+            color: AppColors.primarySoft, shape: BoxShape.circle),
+        child: Text('$numero',
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryHover)),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(texto,
+            style: const TextStyle(
+                fontSize: 13.5, color: AppColors.textBody)),
+      ),
+    ]);
   }
 }
 
@@ -751,132 +701,234 @@ class _FormularioDialogState extends State<_FormularioDialog> {
         return {'pregunta': p.pregunta, 'respuesta': r};
       }).toList();
 
+  int get _respondidas =>
+      List.generate(widget.preguntas.length, (i) => _campoValido(i))
+          .where((v) => v)
+          .length;
+
+  Future<void> _enviar() async {
+    setState(() => _intentoEnviar = true);
+    final valido =
+        List.generate(widget.preguntas.length, (i) => _campoValido(i))
+            .every((v) => v);
+    if (!valido) return;
+    setState(() => _loading = true);
+    await widget.onEnviar(_construirRespuestas());
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.titulo,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-      content: SizedBox(
-        width: 480,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: widget.preguntas.asMap().entries.map((e) {
-              final i = e.key;
-              final p = e.value;
-              final invalido = _intentoEnviar && !_campoValido(i);
-              return Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
+    final total = widget.preguntas.length;
+    final faltan = _intentoEnviar ? total - _respondidas : 0;
+
+    return AppDialog(
+      maxWidth: 560,
+      icon: Icons.list_alt_rounded,
+      title: widget.titulo,
+      subtitle: '$_respondidas de $total respondidas',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              value: total == 0 ? 0 : _respondidas / total,
+              minHeight: 5,
+              backgroundColor: AppColors.border,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 18),
+          if (faltan > 0) ...[
+            InlineBanner(
+              faltan == 1
+                  ? 'Te falta responder 1 pregunta.'
+                  : 'Te faltan responder $faltan preguntas.',
+              tone: BannerTone.error,
+            ),
+            const SizedBox(height: 14),
+          ],
+          ...widget.preguntas.asMap().entries.map((e) {
+            final i = e.key;
+            final p = e.value;
+            final invalido = _intentoEnviar && !_campoValido(i);
+            return Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(
                   color: invalido
-                      ? const Color(0xFFFEF2F2) : const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: invalido
-                        ? const Color(0xFFFCA5A5) : const Color(0xFFE5E7EB),
-                  ),
+                      ? AppColors.dangerBorder
+                      : AppColors.border,
+                  width: invalido ? 1.5 : 1,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(child: Text('${i + 1}. ${p.pregunta}',
-                          style: const TextStyle(fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF374151)))),
-                      if (invalido)
-                        const Text('Requerido',
-                            style: TextStyle(fontSize: 11,
-                                color: Color(0xFFDC2626))),
-                    ]),
-                    const SizedBox(height: 10),
-                    if (p.tipo == 'abierta')
-                      TextField(
-                        controller: _textControllers[i],
-                        maxLines: 3,
-                        onChanged: (_) {
-                          if (_intentoEnviar) setState(() {});
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Escribe tu respuesta...',
-                          hintStyle: const TextStyle(
-                              color: Color(0xFF9CA3AF), fontSize: 13),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                                color: Color(0xFFE5E7EB)),
-                          ),
-                          contentPadding: const EdgeInsets.all(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: _campoValido(i)
+                              ? AppColors.primary
+                              : AppColors.primarySoft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: _campoValido(i)
+                            ? const Icon(Icons.check_rounded,
+                                size: 14, color: Colors.white)
+                            : Text('${i + 1}',
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primaryHover)),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(p.pregunta,
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text)),
                         ),
                       ),
-                    if (p.tipo == 'unica')
-                      ...p.opciones.map((op) => RadioListTile<String>(
-                            value: op,
-                            groupValue: _selectedUnica[i],
-                            onChanged: (v) =>
-                                setState(() => _selectedUnica[i] = v),
-                            title: Text(op,
-                                style: const TextStyle(fontSize: 13)),
-                            activeColor: const Color(0xFF8B5CF6),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                          )),
-                    if (p.tipo == 'multiple')
-                      ...p.opciones.map((op) => CheckboxListTile(
-                            value: _selectedMultiple[i].contains(op),
-                            onChanged: (v) => setState(() {
-                              if (v == true) {
-                                _selectedMultiple[i].add(op);
-                              } else {
-                                _selectedMultiple[i].remove(op);
-                              }
-                            }),
-                            title: Text(op,
-                                style: const TextStyle(fontSize: 13)),
-                            activeColor: const Color(0xFF8B5CF6),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                          )),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
+                    ],
+                  ),
+                  if (p.tipo == 'multiple')
+                    const Padding(
+                      padding: EdgeInsets.only(left: 34, top: 2),
+                      child: Text('Puedes elegir varias opciones',
+                          style: TextStyle(
+                              fontSize: 12, color: AppColors.textSubtle)),
+                    ),
+                  const SizedBox(height: 12),
+                  if (p.tipo == 'abierta')
+                    TextField(
+                      controller: _textControllers[i],
+                      minLines: 2,
+                      maxLines: 5,
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        hintText: 'Escribe tu respuesta…',
+                      ),
+                    ),
+                  if (p.tipo == 'unica')
+                    ...p.opciones.map((op) => _OpcionFicha(
+                          label: op,
+                          seleccionada: _selectedUnica[i] == op,
+                          multiple: false,
+                          onTap: () =>
+                              setState(() => _selectedUnica[i] = op),
+                        )),
+                  if (p.tipo == 'multiple')
+                    ...p.opciones.map((op) => _OpcionFicha(
+                          label: op,
+                          seleccionada: _selectedMultiple[i].contains(op),
+                          multiple: true,
+                          onTap: () => setState(() {
+                            if (!_selectedMultiple[i].add(op)) {
+                              _selectedMultiple[i].remove(op);
+                            }
+                          }),
+                        )),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar',
-              style: TextStyle(color: Color(0xFF6B7280))),
-        ),
-        ElevatedButton(
-          onPressed: _loading ? null : () async {
-            setState(() => _intentoEnviar = true);
-            final valido = List.generate(
-                    widget.preguntas.length, (i) => _campoValido(i))
-                .every((v) => v);
-            if (!valido) return;
-            setState(() => _loading = true);
-            await widget.onEnviar(_construirRespuestas());
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF8B5CF6),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8)),
-          ),
-          child: _loading
-              ? const SizedBox(width: 16, height: 16,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : const Text('Enviar respuestas'),
+        const DialogCancelButton(),
+        DialogPrimaryButton(
+          label: 'Enviar respuestas',
+          icon: Icons.send_rounded,
+          loading: _loading,
+          onPressed: _enviar,
         ),
       ],
+    );
+  }
+}
+
+/// Opción seleccionable (radio o casilla) con aspecto de ficha.
+class _OpcionFicha extends StatelessWidget {
+  final String label;
+  final bool seleccionada;
+  final bool multiple;
+  final VoidCallback onTap;
+
+  const _OpcionFicha({
+    required this.label,
+    required this.seleccionada,
+    required this.multiple,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: seleccionada ? AppColors.primarySoft : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: seleccionada
+                  ? AppColors.primary
+                  : AppColors.borderStrong,
+              width: seleccionada ? 1.5 : 1,
+            ),
+          ),
+          child: Row(children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: seleccionada ? AppColors.primary : Colors.transparent,
+                shape: multiple ? BoxShape.rectangle : BoxShape.circle,
+                borderRadius: multiple ? BorderRadius.circular(5) : null,
+                border: Border.all(
+                  color: seleccionada
+                      ? AppColors.primary
+                      : AppColors.borderStrong,
+                  width: 1.5,
+                ),
+              ),
+              child: seleccionada
+                  ? Icon(multiple ? Icons.check_rounded : Icons.circle,
+                      size: multiple ? 14 : 8, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          seleccionada ? FontWeight.w600 : FontWeight.w500,
+                      color: seleccionada
+                          ? AppColors.primaryHover
+                          : AppColors.textBody)),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 }
@@ -890,26 +942,26 @@ class _TipoBadge extends StatelessWidget {
   const _TipoBadge({required this.tipo, this.requiereEntrega = false});
 
   static const _colors = {
-    'DOCUMENTO':    [Color(0xFFEFF6FF), Color(0xFF3B82F6)],
-    'VIDEO':        [Color(0xFFFFF7ED), Color(0xFFF97316)],
-    'FORMULARIO':   [Color(0xFFF5F3FF), Color(0xFF8B5CF6)],
-    'CONFIRMACION': [Color(0xFFF0FDF4), Color(0xFF22C55E)],
-    'BIENVENIDA':   [Color(0xFFEDE9FE), Color(0xFF7C3AED)],
+    'DOCUMENTO':    [AppColors.infoSoft, AppColors.info],
+    'VIDEO':        [AppColors.warningSoft, AppColors.warning],
+    'FORMULARIO':   [AppColors.primarySoft, AppColors.primaryLight],
+    'CONFIRMACION': [AppColors.successSoft, AppColors.success],
+    'BIENVENIDA':   [AppColors.primarySoft, AppColors.primary],
   };
 
   @override
   Widget build(BuildContext context) {
     final c = _colors[tipo] ??
-        [const Color(0xFFF3F4F6), const Color(0xFF6B7280)];
+        [AppColors.bg, AppColors.textMuted];
     // Si es DOCUMENTO con entrega, mostrar badge especial
     final label = (tipo == 'DOCUMENTO' && requiereEntrega)
         ? 'DOC + ENTREGA'
         : tipo;
     final bgColor = (tipo == 'DOCUMENTO' && requiereEntrega)
-        ? const Color(0xFFF0FDF4)
+        ? AppColors.successSoft
         : c[0] as Color;
     final txtColor = (tipo == 'DOCUMENTO' && requiereEntrega)
-        ? const Color(0xFF10B981)
+        ? AppColors.success
         : c[1] as Color;
 
     return Container(

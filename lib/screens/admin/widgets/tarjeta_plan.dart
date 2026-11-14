@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/chat_models.dart';
+import '../../../theme/app_theme.dart';
 
 class TarjetaPlan extends StatelessWidget {
   final PlanSugerido plan;
@@ -13,15 +14,15 @@ class TarjetaPlan extends StatelessWidget {
     required this.onAjustar,
   });
 
-  static const _morado = Color(0xFF534AB7);
-  static const _moradoClaro = Color(0xFFEEEDFE);
+  static const _morado = AppColors.primaryHover;
+  static const _moradoClaro = AppColors.primarySoft;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE0DFD8), width: 0.5),
+        border: Border.all(color: AppColors.border, width: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.antiAlias,
@@ -35,10 +36,10 @@ class TarjetaPlan extends StatelessWidget {
             color: _moradoClaro,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(plan.titulo,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF3C3489))),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryHover)),
               const SizedBox(height: 2),
               Text('${plan.duracionDias} días · ${plan.etapas.length} etapas',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF534AB7))),
+                  style: const TextStyle(fontSize: 11, color: AppColors.primaryHover)),
             ]),
           ),
           // Etapas
@@ -47,7 +48,7 @@ class TarjetaPlan extends StatelessWidget {
             final etapa = entry.value;
             return Container(
               decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Color(0xFFE0DFD8), width: 0.5))),
+                  border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5))),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Container(
@@ -60,10 +61,10 @@ class TarjetaPlan extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(etapa.nombre,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1A1A))),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.text)),
                   const SizedBox(height: 3),
-                  Text('${etapa.duracionDias} días · ${etapa.tareas.join(', ')}',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF888780)),
+                  Text('${etapa.duracionDias} días · ${etapa.tareas.map((t) => t.titulo).join(', ')}',
+                      style: const TextStyle(fontSize: 11, color: AppColors.textSubtle),
                       maxLines: 2, overflow: TextOverflow.ellipsis),
                 ])),
               ]),
@@ -91,11 +92,11 @@ class TarjetaPlan extends StatelessWidget {
                   onPressed: onAjustar,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    side: const BorderSide(color: Color(0xFFE0DFD8), width: 0.5),
+                    side: const BorderSide(color: AppColors.border, width: 0.5),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                   ),
-                  child: const Text('Ajustar', style: TextStyle(color: Color(0xFF1A1A1A))),
+                  child: const Text('Ajustar', style: TextStyle(color: AppColors.text)),
                 ),
               ),
             ]),

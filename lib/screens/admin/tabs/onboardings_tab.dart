@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../models/onboarding.dart';
 import '../../../services/api_service.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_dialog.dart';
+import '../../../theme/app_widgets.dart';
+import '../../../theme/app_toast.dart';
 
 class OnboardingsTab extends StatelessWidget {
   final List<Onboarding> onboardings;
@@ -16,22 +20,15 @@ class OnboardingsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (onboardings.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.track_changes_rounded,
-                size: 48, color: Color(0xFFD1D5DB)),
-            SizedBox(height: 12),
-            Text('No hay onboardings asignados',
-                style: TextStyle(fontSize: 15, color: Color(0xFF6B7280))),
-          ],
-        ),
+      return const EmptyState(
+        icon: Icons.track_changes_rounded,
+        title: 'No hay onboardings asignados',
+        message: 'Asigna un plan a un empleado con el botón Asignar plan.',
       );
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       child: Column(
         children: onboardings
             .map((o) => _OnboardingCard(
@@ -51,72 +48,26 @@ class OnboardingsTab extends StatelessWidget {
     );
   }
 
-  void _confirmarDesasignar(BuildContext context, Onboarding o) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
-        title: const Row(children: [
-          Icon(Icons.remove_circle_outline_rounded,
-              color: Color(0xFFDC2626), size: 20),
-          SizedBox(width: 8),
-          Text('Desasignar onboarding',
-              style: TextStyle(fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFDC2626))),
-        ]),
-        content: Text(
-          '¿Desasignar el plan "${o.displayPlan}" de ${o.displayEmpleado}?\n\n'
-          'Se eliminará todo su progreso. Esta acción es irreversible.',
-          style: const TextStyle(fontSize: 13,
-              color: Color(0xFF374151), height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar',
-                style: TextStyle(color: Color(0xFF6B7280))),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await ApiService.eliminarOnboarding(o.idEmployeeOnboarding);
-                onRefresh();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Onboarding desasignado'),
-                      backgroundColor: Color(0xFF10B981),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(e.toString().replaceAll('Exception: ', '')),
-                      backgroundColor: const Color(0xFFDC2626),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Sí, desasignar'),
-          ),
-        ],
-      ),
+  Future<void> _confirmarDesasignar(BuildContext context, Onboarding o) async {
+    final ok = await confirmarAccion(
+      context,
+      titulo: 'Desasignar onboarding',
+      mensaje:
+          'Se quitará el plan «${o.displayPlan}» a ${o.displayEmpleado} y se '
+          'eliminará todo su progreso. Esta acción no se puede deshacer.',
+      confirmar: 'Desasignar',
+      icono: Icons.link_off_rounded,
     );
+    if (!ok) return;
+    try {
+      await ApiService.eliminarOnboarding(o.idEmployeeOnboarding);
+      onRefresh();
+      if (context.mounted) AppToast.success(context, 'Onboarding desasignado');
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.error(context, e.toString().replaceAll('Exception: ', ''));
+      }
+    }
   }
 }
 
@@ -136,94 +87,71 @@ class _OnboardingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _colorEstado(onboarding.estado);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: AppCard(
+        padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Container(
-              width: 40, height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1565C0).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(child: Text(_iniciales(onboarding.displayEmpleado),
-                  style: const TextStyle(fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1565C0)))),
-            ),
-            const SizedBox(width: 12),
+            InitialAvatar(onboarding.displayEmpleado, size: 42),
+            const SizedBox(width: 14),
             Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(onboarding.displayEmpleado,
-                    style: const TextStyle(fontSize: 14,
+                    style: const TextStyle(fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A2E))),
+                        color: AppColors.text)),
+                const SizedBox(height: 2),
                 Text(onboarding.displayPlan,
-                    style: const TextStyle(fontSize: 12,
-                        color: Color(0xFF6B7280))),
+                    style: const TextStyle(fontSize: 13,
+                        color: AppColors.textMuted)),
               ],
             )),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(onboarding.estado,
-                  style: TextStyle(fontSize: 11,
-                      fontWeight: FontWeight.w600, color: color)),
-            ),
+            StatusBadge.estado(onboarding.estado),
           ]),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(children: [
-            Expanded(child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: onboarding.progreso / 100,
-                backgroundColor: const Color(0xFFE5E7EB),
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-                minHeight: 6,
-              ),
-            )),
-            const SizedBox(width: 10),
+            Expanded(child: AppProgressBar(
+                value: onboarding.progreso / 100, color: color)),
+            const SizedBox(width: 12),
             Text('${onboarding.progreso.toStringAsFixed(0)}%',
-                style: TextStyle(fontSize: 12,
-                    fontWeight: FontWeight.w600, color: color)),
+                style: const TextStyle(fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textBody)),
           ]),
           if (onboarding.fechaInicio != null) ...[
-            const SizedBox(height: 4),
-            Text('Inicio: ${onboarding.fechaInicio!.toLocal().toString().split(' ')[0]}',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
+            const SizedBox(height: 8),
+            Row(children: [
+              const Icon(Icons.calendar_today_outlined,
+                  size: 13, color: AppColors.textSubtle),
+              const SizedBox(width: 6),
+              Text('Inicio: ${onboarding.fechaInicio!.toLocal().toString().split(' ')[0]}',
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textMuted)),
+            ]),
           ],
+          const SizedBox(height: 14),
+          const Divider(),
           const SizedBox(height: 10),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             TextButton.icon(
               onPressed: onDesasignar,
-              icon: const Icon(Icons.remove_circle_outline_rounded, size: 14),
-              label: const Text('Desasignar', style: TextStyle(fontSize: 12)),
+              icon: const Icon(Icons.remove_circle_outline_rounded, size: 16),
+              label: const Text('Desasignar', style: TextStyle(fontSize: 13)),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFDC2626),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                foregroundColor: AppColors.danger,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
             ),
             const SizedBox(width: 8),
-            TextButton.icon(
+            OutlinedButton.icon(
               onPressed: onVerDetalle,
-              icon: const Icon(Icons.open_in_new_rounded, size: 14),
-              label: const Text('Ver detalle', style: TextStyle(fontSize: 12)),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF1565C0),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              icon: const Icon(Icons.open_in_new_rounded, size: 15),
+              label: const Text('Ver detalle', style: TextStyle(fontSize: 13)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 36),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
             ),
           ]),
@@ -234,16 +162,10 @@ class _OnboardingCard extends StatelessWidget {
 
   Color _colorEstado(String e) {
     switch (e) {
-      case 'COMPLETADO': return const Color(0xFF10B981);
-      case 'EN_PROGRESO': return const Color(0xFFF59E0B);
-      default: return const Color(0xFF6B7280);
+      case 'COMPLETADO': return AppColors.success;
+      case 'EN_PROGRESO': return AppColors.primary;
+      default: return AppColors.textSubtle;
     }
-  }
-
-  String _iniciales(String nombre) {
-    final p = nombre.trim().split(' ');
-    if (p.length >= 2) return '${p[0][0]}${p[1][0]}'.toUpperCase();
-    return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
   }
 }
 
@@ -262,7 +184,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
   bool _loading = true;
   String? _error;
 
-  static const _baseUrl = 'http://localhost:8000';
+  static const _baseUrl = ApiService.baseUrl;
 
   @override
   void initState() {
@@ -307,7 +229,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Color(0xFF1565C0),
+              color: AppColors.primary,
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(children: [
@@ -358,7 +280,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cerrar',
-                    style: TextStyle(color: Color(0xFF6B7280))),
+                    style: TextStyle(color: AppColors.textMuted)),
               ),
             ]),
           ),
@@ -378,10 +300,10 @@ class _DetalleDialogState extends State<_DetalleDialog> {
         padding: const EdgeInsets.all(24),
         child: Column(children: [
           const Icon(Icons.cloud_off_rounded,
-              color: Color(0xFFDC2626), size: 40),
+              color: AppColors.danger, size: 40),
           const SizedBox(height: 8),
           Text(_error!, textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
           const SizedBox(height: 12),
           TextButton.icon(
             onPressed: () {
@@ -412,17 +334,17 @@ class _DetalleDialogState extends State<_DetalleDialog> {
 
   Widget _buildStep(StepConProgreso step, int numero) {
     final color = step.todoCompleto
-        ? const Color(0xFF10B981)
+        ? AppColors.success
         : step.enProgreso
-            ? const Color(0xFF1565C0)
-            : const Color(0xFF9CA3AF);
+            ? AppColors.primary
+            : AppColors.textSubtle;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: AppColors.surfaceAlt,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(children: [
         Padding(
@@ -442,7 +364,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
             Expanded(child: Text(step.titulo,
                 style: const TextStyle(fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A2E)))),
+                    color: AppColors.text))),
             Text('${step.completadas}/${step.totalTasks} tareas',
                 style: TextStyle(fontSize: 11, color: color,
                     fontWeight: FontWeight.w500)),
@@ -462,7 +384,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Color(0xFFE5E7EB)))),
+            border: Border(top: BorderSide(color: AppColors.border))),
         child: Row(children: [
           Icon(
             completada
@@ -470,14 +392,14 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                 : Icons.radio_button_unchecked_rounded,
             size: 16,
             color: completada
-                ? const Color(0xFF10B981) : const Color(0xFFD1D5DB),
+                ? AppColors.success : AppColors.borderStrong,
           ),
           const SizedBox(width: 10),
           Expanded(child: Text(task.titulo,
               style: TextStyle(fontSize: 12,
                   color: completada
-                      ? const Color(0xFF6B7280)
-                      : const Color(0xFF1A1A2E),
+                      ? AppColors.textMuted
+                      : AppColors.text,
                   decoration: completada
                       ? TextDecoration.lineThrough : null))),
           const SizedBox(width: 8),
@@ -486,11 +408,11 @@ class _DetalleDialogState extends State<_DetalleDialog> {
           if (completada && task.fechaCompletada != null)
             Text(task.fechaCompletada!.toLocal().toString().split(' ')[0],
                 style: const TextStyle(fontSize: 10,
-                    color: Color(0xFF10B981)))
+                    color: AppColors.success))
           else if (!completada)
             const Text('Pendiente',
                 style: TextStyle(fontSize: 10,
-                    color: Color(0xFF9CA3AF))),
+                    color: AppColors.textSubtle)),
         ]),
       ),
 
@@ -510,17 +432,17 @@ class _DetalleDialogState extends State<_DetalleDialog> {
       margin: const EdgeInsets.fromLTRB(42, 0, 16, 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F3FF),
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFDDD6FE)),
+        border: Border.all(color: AppColors.primaryBorder),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Row(children: [
-          Icon(Icons.quiz_outlined, size: 12, color: Color(0xFF8B5CF6)),
+          Icon(Icons.quiz_outlined, size: 12, color: AppColors.primaryLight),
           SizedBox(width: 6),
           Text('Respuestas del empleado',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                  color: Color(0xFF8B5CF6))),
+                  color: AppColors.primaryLight)),
         ]),
         const SizedBox(height: 8),
         ...respuestas.asMap().entries.map((e) => Padding(
@@ -529,7 +451,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                 Text('${e.key + 1}. ${e.value.pregunta}',
                     style: const TextStyle(fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF374151))),
+                        color: AppColors.textBody)),
                 const SizedBox(height: 2),
                 Container(
                   width: double.infinity,
@@ -538,11 +460,11 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Text(e.value.respuesta,
                       style: const TextStyle(fontSize: 12,
-                          color: Color(0xFF1A1A2E))),
+                          color: AppColors.text)),
                 ),
               ]),
             )),
@@ -558,8 +480,8 @@ class _DetalleDialogState extends State<_DetalleDialog> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: tieneEntrega
-            ? const Color(0xFFF0FDF4)
-            : const Color(0xFFFFF7ED),
+            ? AppColors.successSoft
+            : AppColors.warningSoft,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: tieneEntrega
@@ -574,7 +496,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
               : Icons.hourglass_empty_rounded,
           size: 14,
           color: tieneEntrega
-              ? const Color(0xFF10B981)
+              ? AppColors.success
               : const Color(0xFFD97706),
         ),
         const SizedBox(width: 8),
@@ -586,7 +508,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
               fontSize: 11,
               fontWeight: FontWeight.w500,
               color: tieneEntrega
-                  ? const Color(0xFF065F46)
+                  ? AppColors.successDark
                   : const Color(0xFF92400E)),
         )),
         if (tieneEntrega)
@@ -602,7 +524,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
             icon: const Icon(Icons.open_in_new_rounded, size: 13),
             label: const Text('Ver archivo', style: TextStyle(fontSize: 11)),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF10B981),
+              foregroundColor: AppColors.success,
               padding: const EdgeInsets.symmetric(
                   horizontal: 8, vertical: 4),
             ),
@@ -615,9 +537,9 @@ class _DetalleDialogState extends State<_DetalleDialog> {
     final label = (tipo == 'DOCUMENTO' && requiereEntrega)
         ? 'DOC+ENTREGA' : tipo;
     final bg = (tipo == 'DOCUMENTO' && requiereEntrega)
-        ? const Color(0xFFF0FDF4) : const Color(0xFFE0F2FE);
+        ? AppColors.successSoft : AppColors.infoSoft;
     final txt = (tipo == 'DOCUMENTO' && requiereEntrega)
-        ? const Color(0xFF10B981) : const Color(0xFF0369A1);
+        ? AppColors.success : const Color(0xFF0369A1);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -631,9 +553,9 @@ class _DetalleDialogState extends State<_DetalleDialog> {
 
   Color _colorEstado(String e) {
     switch (e) {
-      case 'COMPLETADO': return const Color(0xFF10B981);
-      case 'EN_PROGRESO': return const Color(0xFFF59E0B);
-      default: return const Color(0xFF6B7280);
+      case 'COMPLETADO': return AppColors.success;
+      case 'EN_PROGRESO': return AppColors.warning;
+      default: return AppColors.textMuted;
     }
   }
 }

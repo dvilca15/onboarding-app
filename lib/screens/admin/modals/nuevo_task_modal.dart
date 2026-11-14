@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../services/api_service.dart';
 import '../widgets/ui_helpers.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/app_widgets.dart';
+import '../../../theme/app_dialog.dart';
 
 class NuevoTaskModal extends StatefulWidget {
   final int idStep;
@@ -68,77 +71,102 @@ class _NuevoTaskModalState extends State<NuevoTaskModal> {
     }
   }
 
+  static const _descripcionTipo = {
+    'DOCUMENTO': 'El empleado lee o firma un archivo.',
+    'VIDEO': 'El empleado ve un video.',
+    'FORMULARIO': 'El empleado responde preguntas.',
+    'CONFIRMACION': 'El empleado confirma que lo hizo.',
+  };
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text(
-        'Nueva tarea',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-      ),
-      content: SizedBox(
-        width: 400,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              modalField(
-                'Título de la tarea',
-                _tituloCtrl,
-                Icons.task_outlined,
+    return AppDialog(
+      icon: Icons.task_alt_rounded,
+      title: 'Nueva tarea',
+      subtitle: 'Define qué debe hacer el empleado.',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            modalField('Título de la tarea', _tituloCtrl, Icons.task_outlined,
                 (v) => v!.isEmpty ? 'Requerido' : null,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
+                hint: 'Leer el reglamento interno'),
+            const SizedBox(height: 16),
+            FieldLabel(
+              label: 'Tipo de tarea',
+              help: _descripcionTipo[_tipo],
+              child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _tipo,
-                decoration: inputDec('Tipo de tarea', Icons.category_outlined),
-                items: _tipos
-                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                    .toList(),
+                icon: const Icon(Icons.expand_more_rounded,
+                    color: AppColors.textSubtle),
+                items: _tipos.map((t) {
+                  final i = TipoTareaInfo.de(t);
+                  return DropdownMenuItem(
+                    value: t,
+                    child: Row(children: [
+                      Icon(i.icono, size: 18, color: i.color),
+                      const SizedBox(width: 10),
+                      Text(i.etiqueta),
+                    ]),
+                  );
+                }).toList(),
                 onChanged: (v) => setState(() => _tipo = v!),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: modalField(
-                      'Orden',
-                      _ordenCtrl,
-                      Icons.format_list_numbered,
-                      (v) {
-                        if (v!.isEmpty) return 'Requerido';
-                        if (int.tryParse(v) == null) return 'Número';
-                        return null;
-                      },
-                      keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: modalField('Orden', _ordenCtrl,
+                      Icons.format_list_numbered, (v) {
+                    if (v!.isEmpty) return 'Requerido';
+                    if (int.tryParse(v) == null) return 'Número';
+                    return null;
+                  }, keyboardType: TextInputType.number),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: FieldLabel(
+                    label: 'Obligatoria',
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(color: AppColors.borderStrong),
+                      ),
+                      child: Row(children: [
+                        Expanded(
+                          child: Text(_obligatorio ? 'Sí' : 'No',
+                              style: const TextStyle(
+                                  fontSize: 14, color: AppColors.text)),
+                        ),
+                        Switch(
+                          value: _obligatorio,
+                          onChanged: (v) => setState(() => _obligatorio = v),
+                          activeColor: AppColors.primary,
+                        ),
+                      ]),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Row(
-                    children: [
-                      Switch(
-                        value: _obligatorio,
-                        onChanged: (v) => setState(() => _obligatorio = v),
-                        activeColor: const Color(0xFF1565C0),
-                      ),
-                      const Text('Obligatoria', style: TextStyle(fontSize: 13)),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar', style: TextStyle(color: Color(0xFF6B7280))),
-        ),
-        ElevatedButton(
-          onPressed: _loading ? null : _submit,
-          style: primaryBtnStyle(),
-          child: _loading ? btnSpinner() : const Text('Crear tarea'),
+        DialogCancelButton(
+            onPressed: _loading ? null : () => Navigator.pop(context)),
+        DialogPrimaryButton(
+          label: 'Crear tarea',
+          loading: _loading,
+          onPressed: _submit,
         ),
       ],
     );
